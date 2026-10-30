@@ -250,6 +250,85 @@
   .st-done { color: #166534; font-weight: 700; } .st-pending { color: #b45309; font-weight: 700; }
   .st-done .ms, .st-pending .ms { font-size: 1.1em; }
 
+  /* --- પરિણામ ઝલક (e-NAS જેવો દેખાવ) --- */
+  .home-tabs { max-width: 560px; }
+  .ov-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; color: #fff; border-radius: 24px;
+    padding: 26px 24px; margin-bottom: 16px; background: radial-gradient(circle at 85% 20%, rgba(255,255,255,.12) 0 120px, transparent 121px),
+    linear-gradient(120deg, #2b5ce6 0%, #4338ca 55%, #6d28d9 100%); box-shadow: 0 12px 30px rgba(67,56,202,.25); }
+  .ov-hero h1 { font-size: 2.1rem; font-weight: 800; margin: 8px 0 2px; color: #fde68a; }
+  .ov-hero p { color: #e0e7ff; }
+  .ov-pill { display: inline-flex; align-items: center; padding: 4px 14px; border-radius: 999px; background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.3); font-weight: 700; font-size: .92rem; }
+  .ov-pill .ms { color: #fde68a; }
+  .ov-hero-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .ov-source { display: inline-flex; background: rgba(255,255,255,.14); border-radius: 999px; padding: 4px; }
+  .ov-source button { padding: 6px 16px; border-radius: 999px; font-weight: 700; color: #e0e7ff; cursor: pointer; }
+  .ov-source button.on { background: #fff; color: #4338ca; }
+  .ov-live { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.3); font-size: .92rem; }
+  .ov-live i { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,.25); }
+  .ov-live.busy i { background: #cbd5e1; box-shadow: none; }
+  .ov-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .ov-card-head h2 { margin: 0; }
+  .ov-card-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .ov-card-head > .btn-link { width: auto; flex: 0 0 auto; }
+  .ov-filters .ov-card-head h2 { white-space: nowrap; }
+  .ov-card-head .xl-btn { margin-left: 4px; width: 36px; height: 36px; flex-shrink: 0; }
+  .ov-tag { background: #ede9fe; color: #5b21b6; font-weight: 700; font-size: .85rem; padding: 4px 12px; border-radius: 10px; white-space: nowrap; }
+  .ov-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 16px; }
+  @media (max-width: 900px) { .ov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px) { .ov-grid { grid-template-columns: 1fr; } }
+  .ov-field { display: flex; flex-direction: column; gap: 6px; font-weight: 700; color: #334155; min-width: 0; }
+  .ov-field .field { min-height: 48px; font-size: 1.02rem; }
+  .ov-field .field:disabled { background: #f1f5f9; color: #475569; }
+  .ov-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 22px 0 12px; }
+  .ov-head h2 { font-size: 1.7rem; font-weight: 800; }
+  .ov-head-tools { display: flex; gap: 8px; }
+  .ov-head-tools .field { min-height: 44px; font-size: .98rem; width: auto; }
+  .ov-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 12px; }
+  @media (max-width: 900px) { .ov-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ov-kpi { background: #fff; border: 1px solid var(--line); border-top: 5px solid; border-radius: 20px; padding: 16px 18px; box-shadow: 0 6px 20px rgba(15,23,42,.05); }
+  .ov-kpi.c1 { border-top-color: #6366f1; } .ov-kpi.c2 { border-top-color: #14b8a6; } .ov-kpi.c3 { border-top-color: #8b5cf6; } .ov-kpi.c4 { border-top-color: #ec4899; }
+  .ov-kpi-top { display: flex; justify-content: space-between; align-items: center; color: #475569; font-weight: 600; }
+  .ov-kpi-top .ms { margin: 0; padding: 6px; border-radius: 10px; background: #eef2ff; color: #4f46e5; }
+  .ov-kpi.c2 .ov-kpi-top .ms { background: #ccfbf1; color: #0f766e; } .ov-kpi.c3 .ov-kpi-top .ms { background: #ede9fe; color: #6d28d9; }
+  .ov-kpi.c4 .ov-kpi-top .ms { background: #fce7f3; color: #be185d; }
+  .ov-kpi-v { font-size: 2.6rem; font-weight: 800; line-height: 1.15; margin: 8px 0 2px; color: var(--ink); }
+  .ov-kpi-v small { font-size: 1rem; color: var(--muted); font-weight: 600; }
+  .ov-kpi p { color: var(--muted); font-size: .88rem; }
+  .ov-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .ov-badges > * { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); color: #334155; font-size: .95rem; }
+  .ov-badges button { cursor: pointer; } .ov-badges button:hover { border-color: #a5b4fc; }
+  .ov-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ov-two > .admin-card { margin-bottom: 16px; }
+  @media (max-width: 860px) { .ov-two { grid-template-columns: 1fr; gap: 0; } }
+  .ov-sub { margin: 14px 0; }
+  .ov-sub-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-weight: 600; }
+  .ov-track { height: 12px; background: #eef0f8; border-radius: 999px; overflow: hidden; }
+  .ov-track > div { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6d5dfc, #8b7cf6); }
+  .ov-svg { width: 100%; height: auto; display: block; }
+  .ov-svg .grid { stroke: #e7e9f3; stroke-width: 1; }
+  .ov-svg .axis { fill: #64748b; font-size: 13px; }
+  .ov-svg .val { fill: #475569; font-size: 13px; font-weight: 600; }
+  .ov-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 520px) { .ov-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .ov-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; border-radius: 14px; text-align: center; color: #475569; font-size: .85rem; }
+  .ov-tile b { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+  .ov-tile small { font-size: .78rem; color: #64748b; }
+  .ov-tile.set { background: #eeedfd; border: 1px solid #d6d3fb; cursor: pointer; } .ov-tile.set b { color: #4338ca; }
+  .ov-tile.set:hover { border-color: #6366f1; }
+  .ov-tile.q { background: #fdf3e3; border: 1px solid #f6e2bf; } .ov-tile.q b { color: #b7791f; }
+  .ov-tile.q.high { background: #e7f8f1; border-color: #c4ecdc; } .ov-tile.q.high b { color: #0f8a62; }
+  .ov-tile.q.low { background: #fdecec; border-color: #f7cfcf; } .ov-tile.q.low b { color: #c53030; }
+  .ov-table td { vertical-align: middle; }
+  .ov-table td:first-child .drill { font-weight: 700; color: var(--ink); }
+  .ov-avg { display: flex; align-items: center; gap: 10px; min-width: 170px; }
+  .ov-avg .ov-track { width: 80px; height: 6px; flex-shrink: 0; }
+  .ov-avg span { background: #ede9fe; color: #4c1d95; font-weight: 700; padding: 3px 10px; border-radius: 8px; font-size: .9rem; white-space: nowrap; }
+  .ov-more { margin-top: 12px; width: 100%; }
+  @media (max-width: 520px) { .ov-hero { padding: 20px 16px; } .ov-hero h1 { font-size: 1.7rem; } .ov-hero-side { align-items: flex-start; }
+    .ov-kpi-v { font-size: 2rem; } .ov-head-tools { width: 100%; } .ov-head-tools .field { flex: 1; } }
+
   .xl-bar { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
   .admin-card h2 .xl-btn { margin-left: auto; width: 36px; height: 36px; }
   .admin-card h2 { gap: 4px; }
@@ -328,7 +407,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -1541,25 +1620,36 @@
 
   routes.dash = function (data) { renderDashboard(data || {}, true); };
 
-  // DIET: બે tab (ડેશબોર્ડ / ક્વિઝ). બાકીના અધિકારીઓ: ફક્ત ડેશબોર્ડ.
+  // tab: પરિણામ ઝલક / વિગતવાર ડેશબોર્ડ / (DIET) ક્વિઝ.
   function renderOfficialHome() {
-    var isDiet = state.session.role === 'DIET';
-    $('app-home').innerHTML = (isDiet
-      ? '<div class="tabs light-tabs"><button type="button" class="tab active" data-home="dash">' + dm('monitoring') + 'ડેશબોર્ડ</button>' +
-        '<button type="button" class="tab" data-home="quiz">' + dm('quiz') + 'ક્વિઝ</button></div>'
-      : '') + '<div id="tab-body"></div>';
+    var tabs = [['overview', 'insights', 'પરિણામ ઝલક'], ['dash', 'account_tree', 'વિગતવાર']];
+    if (state.session.role === 'DIET') tabs.push(['quiz', 'quiz', 'ક્વિઝ']);
+    $('app-home').innerHTML = '<div class="tabs light-tabs home-tabs" style="grid-template-columns:repeat(' + tabs.length + ',1fr)">' +
+      tabs.map(function (t, i) {
+        return '<button type="button" class="tab' + (i ? '' : ' active') + '" data-home="' + t[0] + '">' + dm(t[1]) + t[2] + '</button>';
+      }).join('') + '</div><div id="tab-body"></div>';
     document.querySelectorAll('[data-home]').forEach(function (b) {
       b.addEventListener('click', function () {
-        document.querySelectorAll('[data-home]').forEach(function (x) { x.classList.toggle('active', x === b); });
-        if (b.getAttribute('data-home') === 'quiz') { dash.seq = (dash.seq || 0) + 1; renderDietHome(); } else renderDashboard({}, true);
+        var which = b.getAttribute('data-home');
+        markHomeTab(which);
+        dash.seq = (dash.seq || 0) + 1;
+        stopOverviewTimer();
+        if (which === 'quiz') renderDietHome();
+        else if (which === 'overview') renderOverview({}, true);
+        else renderDashboard({}, true);
       });
     });
-    renderDashboard({}, true);
+    renderOverview({}, true);
+  }
+
+  function markHomeTab(which) {
+    document.querySelectorAll('[data-home]').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-home') === which); });
   }
 
   function renderDashboard(params, fromHistory) {
     dash.params = params || {};
-    document.querySelectorAll('[data-home]').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-home') === 'dash'); });
+    stopOverviewTimer();
+    markHomeTab('dash');
     if (!fromHistory) navPush('dash', dash.params);
     // જલદી ક્લિક કરો તો જૂનો (મોડો આવેલો) જવાબ નવી સ્ક્રીન પર ન લખાય.
     var seq = dash.seq = (dash.seq || 0) + 1;
@@ -1811,6 +1901,293 @@
     loadScript('qrcode').then(function () {
       try { $('qr').innerHTML = ''; new QRCode($('qr'), { text: link, width: 168, height: 168 }); } catch (e) {}
     }, function () { $('qr').innerHTML = '<p class="hint">QR બની શક્યો નહીં — લિંક copy કરીને મોકલો.</p>'; });
+  }
+</script>
+
+  <script>
+  // પરખ – આણંદ : "પરિણામ ઝલક" — e-NAS જેવો એક નજરનો ડેશબોર્ડ (ફિલ્ટર, કાર્ડ, ચાર્ટ, શાળાવાર કોષ્ટક).
+  // ડેટા: પરખ પરિણામ અથવા ડેમો (જૂની e-NAS પરિણામ Sheet). ગણતરી સર્વર પર (apiOverview).
+  var BAND_LABELS = [['', 'બધા વિદ્યાર્થીઓ / પ્રયત્નો'], ['high', '8 થી 10 ગુણ (ઉત્તમ)'], ['mid', '4 થી 7 ગુણ (મધ્યમ)'],
+    ['low', '0 થી 3 ગુણ (વધુ મહેનત જરૂરી)'], ['perfect', 'પૂર્ણ 10 / 10']];
+  var SUBJECT_COLORS = ['#6d5dfc', '#14b8a6', '#f5b14c', '#ec6fa6', '#38bdf8', '#84cc16'];
+  var REFRESH_CHOICES = [[0, 'આપમેળે અપડેટ બંધ'], [30, 'દર 30 સેકન્ડે અપડેટ'], [60, 'દર 1 મિનિટે અપડેટ'], [300, 'દર 5 મિનિટે અપડેટ']];
+  var overview = { params: {}, data: null, timer: null, every: 0, schoolRows: 50, busy: false };
+
+  function ovNum(v) { return v === null || v === undefined ? '—' : Number(v).toLocaleString('en-IN'); }
+
+  function stopOverviewTimer() {
+    if (overview.timer) clearInterval(overview.timer);
+    overview.timer = null;
+  }
+
+  function startOverviewTimer() {
+    stopOverviewTimer();
+    if (!overview.every) return;
+    overview.timer = setInterval(function () {
+      // બીજી સ્ક્રીન પર ગયા / logout થયા: ઘડિયાળ બંધ.
+      if (!state.session || !$('ov-root')) { stopOverviewTimer(); return; }
+      loadOverview(true);
+    }, overview.every * 1000);
+  }
+
+  function renderOverview(params, fromHistory) {
+    overview.params = params || {};
+    overview.schoolRows = 50;
+    markHomeTab('overview');
+    dashRoot().innerHTML = '<div id="ov-root"><div class="admin-card text-center"><div class="spinner admin-spin"></div>' +
+      '<p class="mt-3">પરિણામ ઝલક તૈયાર થઈ રહી છે...</p></div></div>';
+    loadOverview(false);
+    startOverviewTimer();
+  }
+
+  function setOverview(changes) {
+    var p = {};
+    Object.keys(overview.params).forEach(function (k) { p[k] = overview.params[k]; });
+    Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
+    overview.params = p;
+    overview.schoolRows = 50;
+    loadOverview(false, true);
+  }
+
+  // quiet = આપમેળે અપડેટ (સ્ક્રીન ન ઝબકે); keep = ફિલ્ટર બદલ્યું (જૂનો ડેટા દેખાય, ઉપર "અપડેટ થાય છે").
+  function loadOverview(quiet, keep) {
+    var seq = dash.seq = (dash.seq || 0) + 1;
+    var params = {};
+    Object.keys(overview.params).forEach(function (k) { params[k] = overview.params[k]; });
+    if (quiet) params.fresh = true;
+    if ((quiet || keep) && $('ov-live')) { $('ov-live').classList.add('busy'); $('ov-live').lastChild.textContent = 'અપડેટ થઈ રહ્યું છે...'; }
+    callServer('apiOverview', getToken(), params).then(function (r) {
+      if (seq !== dash.seq || !$('ov-root')) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) {
+        if (quiet && overview.data) { drawOverview(); return; }
+        $('ov-root').innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>';
+        return;
+      }
+      overview.data = r;
+      // ડેટા સ્રોત આપમેળે પસંદ થયો હોય તો એ જ રાખો (ફિલ્ટર બદલતાં બદલાય નહીં).
+      overview.params.source = r.source;
+      drawOverview();
+    });
+  }
+
+  function ovSelect(id, label, value, options, disabled) {
+    return '<label class="ov-field"><span>' + label + '</span><select class="field" id="' + id + '"' + (disabled ? ' disabled' : '') + '>' +
+      options.map(function (o) {
+        return '<option value="' + escapeHtml(String(o[0])) + '"' + (String(o[0]) === String(value || '') ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>';
+      }).join('') + '</select></label>';
+  }
+
+  function drawOverview() {
+    var d = overview.data;
+    var f = d.filters;
+    var o = d.options;
+    var c = d.cards;
+    var demo = d.source === 'demo';
+    var stdText = f.std ? 'ધોરણ ' + f.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
+    var html =
+      '<section class="ov-hero">' +
+        '<div class="ov-hero-text"><span class="ov-pill">' + dm('insights') + (demo ? 'ડેમો · e-NAS પરિણામ' : 'પરખ પરિણામ') + '</span>' +
+          '<h1>પરિણામ ઝલક</h1><p>' + stdText + 'ના વિદ્યાર્થીઓ માટે · અભ્યાસથી પ્રગતિ તરફ</p></div>' +
+        '<div class="ov-hero-side">' +
+          (d.demoAllowed ? '<div class="ov-source">' + [['parakh', 'પરખ પરિણામ'], ['demo', 'ડેમો ડેટા']].map(function (s) {
+            return '<button type="button" class="' + (d.source === s[0] ? 'on' : '') + '" data-src="' + s[0] + '">' + s[1] + '</button>';
+          }).join('') + '</div>' : '') +
+          '<span class="ov-live" id="ov-live"><i></i><span>' + (demo ? 'લાઇવ · Sheet સાથે જોડાયેલું' : 'લાઇવ') + ' · ' + escapeHtml(d.at.slice(11)) + '</span></span>' +
+        '</div>' +
+      '</section>' +
+
+      '<section class="admin-card ov-filters">' +
+        '<div class="ov-card-head"><h2>' + dm('filter_alt') + 'પરિણામો તપાસો</h2>' +
+          '<button type="button" class="btn-link" id="ov-clear">' + dm('filter_alt_off') + 'ફિલ્ટર દૂર કરો</button></div>' +
+        '<div class="ov-grid">' +
+          (o.stds.length > 1 ? ovSelect('ov-std', 'ધોરણ', f.std, [['', 'બધાં ધોરણ']].concat(o.stds.map(function (s) { return [s, 'ધોરણ ' + s]; }))) : '') +
+          ovSelect('ov-taluka', 'તાલુકો', f.taluka, [['', 'બધા તાલુકા']].concat(o.talukas.map(function (t) { return [t, t]; })), d.lockTaluka) +
+          ovSelect('ov-school', 'શાળા', f.school, [['', 'બધી શાળાઓ']].concat(o.schools.map(function (s) { return [s.k, s.name + (f.taluka ? '' : ' (' + s.tk + ')')]; }))) +
+          ovSelect('ov-subject', 'વિષય', f.subject, [['', 'બધા વિષયો']].concat(o.subjects.map(function (s) { return [s, s]; }))) +
+          ovSelect('ov-set', 'સેટ', f.set, [['', 'બધા સેટ']].concat(o.sets.map(function (s) { return [s, 'સેટ ' + s]; }))) +
+          '<label class="ov-field"><span>તારીખથી</span><input type="date" class="field" id="ov-from" value="' + escapeHtml(f.from) + '"></label>' +
+          '<label class="ov-field"><span>તારીખ સુધી</span><input type="date" class="field" id="ov-to" value="' + escapeHtml(f.to) + '"></label>' +
+          ovSelect('ov-band', 'વિદ્યાર્થીઓનું ક્ષમતાવાર પરિણામ', f.band, BAND_LABELS) +
+        '</div>' +
+      '</section>' +
+
+      '<div class="ov-head"><div><h2>પરિણામોની એક નજર</h2><p class="muted">' + ovNum(c.attempts) + ' / ' + ovNum(d.total) + ' પ્રયત્નો દર્શાવ્યા છે</p></div>' +
+        '<div class="ov-head-tools"><select class="field" id="ov-every">' + REFRESH_CHOICES.map(function (x) {
+          return '<option value="' + x[0] + '"' + (x[0] === overview.every ? ' selected' : '') + '>' + x[1] + '</option>';
+        }).join('') + '</select>' +
+        '<button type="button" class="btn-ghost" id="ov-refresh">' + dm('refresh') + 'અપડેટ કરો</button></div></div>' +
+
+      '<div class="ov-kpis">' +
+        ovKpi('c1', 'quiz', 'કુલ પ્રયત્નો', ovNum(c.attempts), '', 'દરેક પૂર્ણ ક્વિઝનો એક પ્રયત્ન') +
+        ovKpi('c2', 'trending_up', 'સરેરાશ ગુણ', c.avg === null ? '—' : c.avg.toFixed(1), '/ 10', c.avgPct === null ? '' : c.avgPct + '% સરેરાશ સફળતા') +
+        ovKpi('c3', 'school', 'શાળાઓ', ovNum(c.schools), '', demo ? 'નોંધાયેલ અલગ શાળાનાં નામ' : 'ક્વિઝ આપનાર શાળાઓ') +
+        ovKpi('c4', 'location_on', 'તાલુકાઓ', ovNum(c.talukas), '', 'પસંદ કરેલા ડેટામાંથી') +
+      '</div>' +
+      '<div class="ov-badges">' +
+        '<button type="button" data-band="high">8 અથવા વધુ ગુણ <b>' + ovNum(c.high) + '</b></button>' +
+        '<button type="button" data-band="perfect">પૂર્ણ 10/10 <b>' + ovNum(c.perfect) + '</b></button>' +
+        (c.unknown ? '<span>વિષય / સેટ નોંધાયેલ નથી <b>' + ovNum(c.unknown) + '</b></span>' : '') +
+      '</div>';
+
+    if (!c.attempts) {
+      html += '<div class="admin-card text-center">' + dm('hourglass_empty', 'icon-hero') + '<p>આ પસંદગીમાં કોઈ પરિણામ નથી.</p></div>';
+    } else {
+      html +=
+        '<div class="ov-two">' + subjectCard(d) + histCard(d) + '</div>' +
+        dayCard(d) +
+        '<div class="ov-two">' + setCard(d) + questionCard(d) + '</div>' +
+        schoolCard(d);
+    }
+    $('ov-root').innerHTML = html;
+    bindOverview();
+  }
+
+  function ovKpi(tone, icon, label, value, unit, sub) {
+    return '<div class="ov-kpi ' + tone + '"><div class="ov-kpi-top"><span>' + label + '</span>' + dm(icon) + '</div>' +
+      '<div class="ov-kpi-v">' + value + (unit ? ' <small>' + unit + '</small>' : '') + '</div><p>' + escapeHtml(sub) + '</p></div>';
+  }
+
+  function cardHead(title, tag, sub, extra) {
+    return '<div class="ov-card-head"><div><h2>' + title + '</h2>' + (sub ? '<p class="muted">' + sub + '</p>' : '') + '</div>' +
+      '<div class="ov-card-tools">' + (tag ? '<span class="ov-tag">' + tag + '</span>' : '') + (extra || '') + '</div></div>';
+  }
+
+  function subjectCard(d) {
+    return '<section class="admin-card">' + cardHead('વિષય પ્રમાણે પ્રદર્શન', 'વિષયવાર', 'સરેરાશ ગુણની સરખામણી · મહત્તમ 10 ગુણ') +
+      d.subjects.map(function (s, i) {
+        var color = s.name === 'નોંધાયેલ નથી' ? '#a8adc6' : SUBJECT_COLORS[i % SUBJECT_COLORS.length];
+        return '<div class="ov-sub"><div class="ov-sub-top"><span>' + escapeHtml(s.name) + '</span><span class="muted">' +
+          s.avg.toFixed(1) + ' / 10 · ' + ovNum(s.n) + ' પ્રયત્નો</span></div>' +
+          '<div class="ov-track"><div style="width:' + (s.avg * 10) + '%;background:' + color + '"></div></div></div>';
+      }).join('') + '<p class="hint">દરેક વિષયના પ્રયત્નોની સંખ્યા સાથે સરેરાશ ગુણ દર્શાવ્યા છે.</p></section>';
+  }
+
+  // ગુણનું વિતરણ: 0–10 ઊભા bar (8 થી ઉપર લીલા).
+  function histCard(d) {
+    var W = 560, H = 250, L = 44, B = 40, T = 24;
+    var max = Math.max.apply(null, d.hist.concat([1]));
+    var step = (W - L - 8) / 11;
+    var y = function (v) { return T + (H - T - B) * (1 - v / max); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="ov-svg" role="img" aria-label="ગુણનું વિતરણ">' +
+      [0, max / 2, max].map(function (v) {
+        return '<line x1="' + L + '" x2="' + (W - 4) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="grid"/>' +
+          '<text x="' + (L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" class="axis">' + (Math.round(v * 10) / 10) + '</text>';
+      }).join('') +
+      d.hist.map(function (v, i) {
+        var x = L + i * step + step * 0.18, w = step * 0.64, top = y(v);
+        return '<rect x="' + x + '" y="' + top + '" width="' + w + '" height="' + (H - B - top) + '" rx="5" fill="' + (i >= 8 ? '#14b8a6' : '#a597f4') + '"><title>' + i + ' ગુણ: ' + v + '</title></rect>' +
+          '<text x="' + (x + w / 2) + '" y="' + (top - 6) + '" text-anchor="middle" class="val">' + v + '</text>' +
+          '<text x="' + (x + w / 2) + '" y="' + (H - B + 18) + '" text-anchor="middle" class="axis">' + i + '</text>';
+      }).join('') +
+      '<text x="' + ((W + L) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" class="axis">મેળવેલા ગુણ</text></svg>';
+    return '<section class="admin-card">' + cardHead('ગુણનું વિતરણ', '0 થી 10 ગુણ', 'કેટલા પ્રયત્નોમાં કેટલા ગુણ મળ્યા?') + svg + '</section>';
+  }
+
+  // દિવસ પ્રમાણે અભ્યાસ: છેલ્લા 14 દિવસની રેખા.
+  function dayCard(d) {
+    var days = d.days;
+    var W = 1000, H = 250, L = 48, R = 24, B = 36, T = 28;
+    var max = Math.max.apply(null, days.map(function (x) { return x.n; }).concat([1]));
+    var sum = days.reduce(function (a, x) { return a + x.n; }, 0);
+    var stepX = (W - L - R) / Math.max(1, days.length - 1);
+    var px = function (i) { return L + i * stepX; };
+    var py = function (v) { return T + (H - T - B) * (1 - v / max); };
+    var line = days.map(function (x, i) { return (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + py(x.n).toFixed(1); }).join(' ');
+    var area = line + ' L' + px(days.length - 1).toFixed(1) + ' ' + (H - B) + ' L' + L + ' ' + (H - B) + ' Z';
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="ov-svg" role="img" aria-label="દિવસ પ્રમાણે પ્રયત્નો">' +
+      '<defs><linearGradient id="ov-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b7cf6" stop-opacity=".35"/><stop offset="1" stop-color="#8b7cf6" stop-opacity="0"/></linearGradient></defs>' +
+      [0, max / 2, max].map(function (v) {
+        return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + py(v) + '" y2="' + py(v) + '" class="grid"/>' +
+          '<text x="' + (L - 8) + '" y="' + (py(v) + 4) + '" text-anchor="end" class="axis">' + (Math.round(v * 10) / 10) + '</text>';
+      }).join('') +
+      '<path d="' + area + '" fill="url(#ov-area)"/><path d="' + line + '" fill="none" stroke="#8b7cf6" stroke-width="3" stroke-linejoin="round"/>' +
+      days.map(function (x, i) {
+        var label = x.d.slice(8) + '/' + x.d.slice(5, 7);
+        return '<circle cx="' + px(i) + '" cy="' + py(x.n) + '" r="4.5" fill="#8b7cf6"><title>' + label + ': ' + x.n + '</title></circle>' +
+          (x.n ? '<text x="' + px(i) + '" y="' + (py(x.n) - 10) + '" text-anchor="middle" class="val">' + x.n + '</text>' : '') +
+          (i % 2 === days.length % 2 ? '' : '<text x="' + px(i) + '" y="' + (H - 10) + '" text-anchor="middle" class="axis">' + label + '</text>');
+      }).join('') + '</svg>';
+    return '<section class="admin-card">' + cardHead('દિવસ પ્રમાણે અભ્યાસ', ovNum(sum) + ' પ્રયત્નો', 'છેલ્લા 14 દિવસના પ્રયત્નો · ભારતીય સમય મુજબ') + svg + '</section>';
+  }
+
+  function setCard(d) {
+    if (!d.sets.length) return '<section class="admin-card">' + cardHead('સેટ પ્રમાણે ભાગીદારી', '', 'સેટ નોંધાયેલ નથી.') + '</section>';
+    return '<section class="admin-card">' + cardHead('સેટ પ્રમાણે ભાગીદારી', '', 'પસંદ કરેલા વિષય અને અન્ય ફિલ્ટર મુજબ') +
+      '<div class="ov-tiles">' + d.sets.map(function (s) {
+        return '<button type="button" class="ov-tile set" data-set="' + s.set + '"><span>સેટ ' + s.set + '</span><b>' + ovNum(s.n) + '</b><small>' + s.avg.toFixed(1) + ' / 10 સરેરાશ</small></button>';
+      }).join('') + '</div>' +
+      (d.noSet ? '<p class="hint">' + ovNum(d.noSet) + ' પ્રયત્નોમાં સેટ નોંધાયેલ નથી.</p>' : '') + '</section>';
+  }
+
+  function questionCard(d) {
+    if (!d.questions.length) return '<section class="admin-card">' + cardHead('પ્રશ્નવાર સફળતા', '', 'પ્રશ્નવાર માહિતી નથી.') + '</section>';
+    return '<section class="admin-card">' + cardHead('પ્રશ્નવાર સફળતા', 'સાચા જવાબ %', 'પ્રશ્ન 1 થી ' + d.questions.length + 'માં સાચા જવાબોનું પ્રમાણ') +
+      '<div class="ov-tiles">' + d.questions.map(function (q) {
+        return '<div class="ov-tile q ' + (q.pct < 40 ? 'low' : q.pct < 60 ? 'mid' : 'high') + '"><span>પ્રશ્ન ' + q.n + '</span><b>' + q.pct + '%</b><small>' +
+          ovNum(q.right) + ' / ' + ovNum(q.of) + ' સાચા</small></div>';
+      }).join('') + '</div>' +
+      '<p class="hint">જુદા વિષય / સેટમાં એક જ ક્રમાંકે જુદા પ્રશ્નો હોય છે. ચોક્કસ પ્રશ્નનું પરિણામ જોવા વિષય અને સેટ પસંદ કરો.</p></section>';
+  }
+
+  function schoolCard(d) {
+    var rows = d.schools.slice(0, overview.schoolRows);
+    return '<section class="admin-card">' + cardHead('શાળાવાર સરખામણી', ovNum(d.schools.length) + ' શાળાઓ',
+        'સરેરાશ ગુણ પ્રમાણે ગોઠવેલી શાળાઓ · નામ પર ક્લિક કરી તે શાળા જુઓ', xlButton('ov-schools')) +
+      '<div class="table-wrap"><table class="summary-table ov-table"><thead><tr><th>શાળાનું નામ</th><th>તાલુકો</th><th>પ્રયત્નો</th><th>સરેરાશ ગુણ</th><th>8+ ગુણ</th></tr></thead><tbody>' +
+      rows.map(function (s) {
+        return '<tr><td><button type="button" class="drill" data-school="' + escapeHtml(s.k) + '">' + escapeHtml(s.name) + '</button></td>' +
+          '<td>' + escapeHtml(s.tk) + '</td><td>' + ovNum(s.n) + '</td>' +
+          '<td><div class="ov-avg"><div class="ov-track"><div style="width:' + (s.avg * 10) + '%"></div></div><span>' + s.avg.toFixed(1) + ' / 10</span></div></td>' +
+          '<td>' + ovNum(s.high) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      (d.schools.length > rows.length ? '<button type="button" class="btn-ghost ov-more" id="ov-more">' + dm('expand_more') +
+        'વધુ શાળાઓ બતાવો (' + ovNum(d.schools.length - rows.length) + ' બાકી)</button>' : '') + '</section>';
+  }
+
+  function bindOverview() {
+    var root = $('ov-root');
+    root.querySelectorAll('[data-src]').forEach(function (b) {
+      b.addEventListener('click', function () { overview.params = { source: b.getAttribute('data-src') }; overview.schoolRows = 50; loadOverview(false, true); });
+    });
+    [['ov-std', 'std'], ['ov-taluka', 'taluka'], ['ov-school', 'school'], ['ov-subject', 'subject'], ['ov-set', 'set'],
+      ['ov-from', 'from'], ['ov-to', 'to'], ['ov-band', 'band']].forEach(function (pair) {
+      var el = $(pair[0]);
+      if (!el) return;
+      el.addEventListener('change', function () {
+        var ch = {};
+        ch[pair[1]] = this.value;
+        // તાલુકો બદલાય તો જૂની શાળા પસંદગી રદ.
+        if (pair[1] === 'taluka' || pair[1] === 'std') ch.school = '';
+        setOverview(ch);
+      });
+    });
+    $('ov-clear').addEventListener('click', function () { overview.params = { source: overview.params.source }; loadOverview(false, true); });
+    $('ov-refresh').addEventListener('click', function () { loadOverview(true); });
+    $('ov-every').addEventListener('change', function () { overview.every = Number(this.value); startOverviewTimer(); });
+    root.querySelectorAll('[data-band]').forEach(function (b) {
+      b.addEventListener('click', function () { setOverview({ band: overview.params.band === b.getAttribute('data-band') ? '' : b.getAttribute('data-band') }); });
+    });
+    root.querySelectorAll('[data-set]').forEach(function (b) {
+      b.addEventListener('click', function () { setOverview({ set: b.getAttribute('data-set') }); });
+    });
+    root.querySelectorAll('[data-school]').forEach(function (b) {
+      b.addEventListener('click', function () { setOverview({ school: b.getAttribute('data-school') }); window.scrollTo(0, 0); });
+    });
+    if ($('ov-more')) $('ov-more').addEventListener('click', function () { overview.schoolRows += 100; drawOverview(); });
+    root.querySelectorAll('[data-xl="ov-schools"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = overview.data;
+        var rows = [['શાળાનું નામ', 'તાલુકો', 'પ્રયત્નો', 'સરેરાશ ગુણ (10 માંથી)', '8+ ગુણ']].concat(d.schools.map(function (s) {
+          return [s.name, s.tk, s.n, s.avg, s.high];
+        }));
+        var label = b.innerHTML;
+        b.disabled = true;
+        b.innerHTML = dm('progress_activity', 'spin');
+        downloadXlsx(('પરખ-ઝલક-' + (d.source === 'demo' ? 'ડેમો-' : '') + 'શાળાવાર.xlsx').replace(/\s+/g, '_'), [{ name: 'શાળાવાર', rows: rows }])
+          .then(function () { b.disabled = false; b.innerHTML = label; }, function () { b.disabled = false; b.innerHTML = label; window.alert('Excel બની શક્યું નહીં. નેટ તપાસો.'); });
+      });
+    });
   }
 </script>
 
