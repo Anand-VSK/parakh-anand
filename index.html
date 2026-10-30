@@ -1734,6 +1734,8 @@
       var runner = google.script.run
         .withSuccessHandler(function (r) { resolve(r || { ok: false, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); })
         .withFailureHandler(function () { resolve({ ok: false, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); });
+      // GitHub Pages નું જૂનું પેજ અને નવો સર્વર: ફંક્શન ન હોય તો અટકી ન રહો.
+      if (typeof runner[fnName] !== 'function') { resolve({ ok: false, message: 'પેજ જૂનું છે. પેજ reload કરો.' }); return; }
       runner[fnName].apply(runner, args);
     });
   }
@@ -1892,15 +1894,18 @@
   }
   function navPush(view, data) {
     var h = historyApi();
-    if (h) try { h.push({ view: view, data: data || null }, {}, view); } catch (e) {}
+    if (h) try { h.push({ view: view, data: data || null, sid: sessionId() }, {}, view); } catch (e) {}
   }
   function navReplace(view, data) {
     var h = historyApi();
-    if (h) try { h.replace({ view: view, data: data || null }, {}, view); } catch (e) {}
+    if (h) try { h.replace({ view: view, data: data || null, sid: sessionId() }, {}, view); } catch (e) {}
   }
+  function sessionId() { return state.session ? state.session.id : null; }
   function onNavChange(e) {
     if (!state.session) return;
     var st = e && e.state;
+    // બીજા વપરાશકર્તાની (logout પહેલાંની) history: એની સ્ક્રીન ક્યારેય ન ખોલો.
+    if (st && st.sid !== sessionId()) { navReplace('home'); renderHome(); return; }
     var view = st && st.view ? st.view : 'home';
     if (routes[view]) routes[view](st ? st.data : null); else renderHome();
   }
@@ -1915,6 +1920,10 @@
   function logoutLocal(message) {
     clearToken();
     state.session = null;
+    // એક જ ફોન/કમ્પ્યુટર પર આગલું બાળક કે અધિકારી અગાઉનો ડેટા ન જુએ.
+    if (typeof quizState !== 'undefined') quizState = null;
+    if (typeof admin !== 'undefined') admin.current = null;
+    if (typeof dash !== 'undefined') { dash.data = null; dash.status = null; }
     showLoginInfo(message || '');
     showScreen('login');
   }
