@@ -338,6 +338,11 @@
   .ov-avg .ov-track { width: 80px; height: 6px; flex-shrink: 0; }
   .ov-avg span { background: #ede9fe; color: #4c1d95; font-weight: 700; padding: 3px 10px; border-radius: 8px; font-size: .9rem; white-space: nowrap; }
   .ov-more { margin-top: 12px; width: 100%; }
+  .report-back { margin-bottom: 12px; }
+  .report-hero h1 { color: #fde68a; }
+  .report-hero p { margin-top: 2px; }
+  .report-xl { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
+  .report-xl .ms { color: #fff; }
   .roster-wrap { max-height: 360px; overflow-y: auto; margin-top: 8px; }
   .roster-paste { min-height: 160px; font-size: 1rem; line-height: 1.5; resize: vertical; }
   .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
@@ -436,7 +441,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiStudentReport"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -1767,6 +1772,12 @@
     dashRoot().querySelectorAll('[data-drill]').forEach(function (b) {
       b.addEventListener('click', function () { go({ level: b.getAttribute('data-level'), id: b.getAttribute('data-drill') }); });
     });
+    dashRoot().querySelectorAll('[data-student]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var back = dash.params;
+        openStudentReport(b.getAttribute('data-student'), function () { renderDashboard(back); });
+      });
+    });
     dashRoot().querySelectorAll('[data-sort]').forEach(function (b) {
       b.addEventListener('click', function () { dash.sortKey = b.getAttribute('data-sort'); drawDashboard(); });
     });
@@ -1790,7 +1801,7 @@
         (isStudent ? '<th>રોલ</th><th>પ્રયત્નો</th>' : '<th><button type="button" data-sort="participants">આપનાર</button></th><th><button type="button" data-sort="participation">ભાગીદારી</button></th>') +
         '<th><button type="button" data-sort="avg">સરેરાશ</button></th></tr></thead><tbody>' +
       rows.map(function (u) {
-        var name = isStudent ? escapeHtml(u.name)
+        var name = isStudent ? '<button type="button" class="drill" data-student="' + escapeHtml(u.id) + '">' + escapeHtml(u.name) + dm('chevron_right') + '</button>'
           : '<button type="button" class="drill" data-level="' + u.level + '" data-drill="' + escapeHtml(u.id) + '">' + escapeHtml(u.name) + dm('chevron_right') + '</button>';
         return '<tr><td>' + name + '</td>' +
           (isStudent ? '<td>' + u.roll + '</td><td>' + u.attempts + '</td>'
@@ -2381,6 +2392,7 @@
     var off = all.length - active.length;
     var html =
       '<div class="admin-card"><h2>' + dm('groups') + 'મારી શાળાનાં બાળકો' + xlButton('roster') + '</h2>' +
+        '<p class="hint">બાળકના નામ પર ક્લિક કરો: તેનું ક્વિઝવાર પરિણામ અને ક્ષમતાવાર અહેવાલ ખૂલશે.</p>' +
         '<p class="hint">' + escapeHtml(roster.data.schoolName || '') + ' · ડાયસ ' + escapeHtml(roster.data.dise) + '. બાળકો ડાયસ કોડ, ધોરણ અને રોલ નંબરથી ક્વિઝમાં પ્રવેશ કરશે.</p>' +
         '<div class="chips mt-3">' + [5, 8].map(function (s) {
           var n = rosterOf(s).filter(function (x) { return x.active; }).length;
@@ -2388,7 +2400,7 @@
         }).join('') + '</div>' +
         (active.length
           ? '<div class="table-wrap roster-wrap"><table class="summary-table"><thead><tr><th>રોલ</th><th>નામ</th><th>જાતિ</th></tr></thead><tbody>' +
-            active.map(function (s) { return '<tr><td>' + s.roll + '</td><td>' + escapeHtml(s.name) + '</td><td>' + escapeHtml(s.gender || '—') + '</td></tr>'; }).join('') +
+            active.map(function (s) { return '<tr><td>' + s.roll + '</td><td><button type="button" class="drill" data-student="' + escapeHtml(roster.data.dise + '-' + s.std + '-' + s.roll) + '">' + escapeHtml(s.name) + dm('chevron_right') + '</button></td><td>' + escapeHtml(s.gender || '—') + '</td></tr>'; }).join('') +
             '</tbody></table></div>'
           : '<p class="hint">ધોરણ ' + roster.std + 'નાં બાળકો હજુ ઉમેર્યાં નથી. નીચે યાદી paste કરો.</p>') +
         (off ? '<p class="hint">' + off + ' બાળક બંધ કરેલાં છે (જૂનું પરિણામ સચવાયેલું છે).</p>' : '') +
@@ -2402,6 +2414,9 @@
     dashRoot().innerHTML = html;
     dashRoot().querySelectorAll('[data-rstd]').forEach(function (b) {
       b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.pasted = null; drawRoster(); });
+    });
+    dashRoot().querySelectorAll('[data-student]').forEach(function (b) {
+      b.addEventListener('click', function () { openStudentReport(b.getAttribute('data-student'), function () { markHomeTab('roster'); renderRoster(); }); });
     });
     $('roster-text').addEventListener('input', function () { roster.pasted = this.value; drawRosterPreview(); });
     dashRoot().querySelectorAll('[data-xl="roster"]').forEach(function (b) {
@@ -2461,6 +2476,135 @@
         btn.innerHTML = dm('save') + 'ફરી સાચવો';
         window.alert('નેટ તપાસીને ફરી પ્રયાસ કરો.');
       });
+  }
+</script>
+
+  <script>
+  // પરખ – આણંદ : બાળકનો અહેવાલ (ક્વિઝવાર ગુણ, વિષયવાર સરેરાશ, ક્ષમતાવાર સફળતા).
+  var report = { data: null, back: null, compQuery: '' };
+
+  routes.student = function (data) { if (data && data.id) openStudentReport(data.id, null, true); };
+
+  // back = પાછા જવાનું ફંક્શન (યાદી / ડેશબોર્ડ). history માંથી આવ્યા હોય તો હોમ.
+  function openStudentReport(id, back, fromHistory) {
+    report.back = back || null;
+    report.compQuery = '';
+    stopOverviewTimer();
+    if (!fromHistory) navPush('student', { id: id });
+    var seq = dash.seq = (dash.seq || 0) + 1;
+    dashRoot().innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">બાળકનો અહેવાલ તૈયાર થાય છે...</p></div>';
+    window.scrollTo(0, 0);
+    callServer('apiStudentReport', getToken(), id).then(function (r) {
+      if (seq !== dash.seq) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      report.data = r;
+      drawStudentReport();
+    });
+  }
+
+  function reportCompRows() {
+    var q = report.compQuery.trim().toLowerCase();
+    return report.data.competency.items.filter(function (c) {
+      return !q || (c.code + ' ' + c.name + ' ' + c.sub).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function reportCompBody() {
+    var rows = reportCompRows();
+    if (!rows.length) return '<tr><td colspan="5" class="muted">આ શોધમાં કોઈ ક્ષમતા નથી.</td></tr>';
+    return rows.map(function (c) {
+      return '<tr><td><span class="muted">' + escapeHtml(c.sub || '—') + '</span><br><b>' + escapeHtml(c.code) + '</b></td>' +
+        '<td>' + escapeHtml(c.name || '—') + '</td><td>' + c.right + ' / ' + c.of + '</td>' +
+        '<td><span class="ov-pct">' + c.pct.toFixed(1) + '%</span></td>' +
+        '<td><span class="ov-band ' + c.band + '">' + COMP_LABELS[c.band] + '</span></td></tr>';
+    }).join('');
+  }
+
+  function drawStudentReport() {
+    var d = report.data;
+    var st = d.student;
+    var comp = d.competency;
+    var weak = comp.items.filter(function (c) { return c.band !== 'good'; }).slice(0, 3);
+    var html =
+      '<button type="button" class="btn-ghost report-back" id="report-back">' + dm('arrow_back') + 'પાછા</button>' +
+      '<section class="ov-hero report-hero"><div class="ov-hero-text"><span class="ov-pill">' + dm('person') + 'બાળકનો અહેવાલ</span>' +
+        '<h1>' + escapeHtml(st.name || 'નામ નથી') + '</h1>' +
+        '<p>ધોરણ ' + st.std + ' · રોલ નંબર ' + st.roll + (st.gender ? ' · ' + escapeHtml(st.gender) : '') + '</p>' +
+        '<p>' + escapeHtml(st.school) + ' · ' + escapeHtml(st.taluka) + (st.active ? '' : ' · બંધ કરેલું') + '</p></div>' +
+        '<div class="ov-hero-side"><button type="button" class="btn-ghost report-xl" data-xl="report">' + dm('download') + 'Excel</button></div>' +
+      '</section>';
+
+    if (!d.attempts) {
+      dashRoot().innerHTML = html + '<div class="admin-card text-center">' + dm('hourglass_empty', 'icon-hero') + '<p>આ બાળકે હજુ કોઈ ક્વિઝ આપી નથી.</p></div>';
+      bindReport();
+      return;
+    }
+
+    html +=
+      '<div class="ov-kpis">' +
+        ovKpi('c1', 'quiz', 'ક્વિઝ આપી', ovNum(d.quizzesTaken), '', 'અલગ ક્વિઝ') +
+        ovKpi('c2', 'repeat', 'કુલ પ્રયત્નો', ovNum(d.attempts), '', 'ફરી આપેલી ક્વિઝ સાથે') +
+        ovKpi('c3', 'trending_up', 'સરેરાશ સફળતા', d.avgPct === null ? '—' : d.avgPct.toFixed(1) + '%', '', 'બધા પ્રયત્નોની') +
+        ovKpi('c4', 'psychology', 'ક્ષમતા સફળતા', comp.pct === null ? '—' : comp.pct.toFixed(1) + '%', '', comp.items.length ? comp.items.length + ' ક્ષમતાઓમાં' : 'ક્ષમતા મેળવણી નથી') +
+      '</div>' +
+      (weak.length ? '<div class="ov-note">' + dm('lightbulb') + '<span><b>વધુ મહાવરો જોઈએ:</b> ' + weak.map(function (c) {
+        return escapeHtml(c.name || c.code) + ' (' + c.pct.toFixed(0) + '%)';
+      }).join(', ') + '</span></div>' : '') +
+
+      '<div class="ov-two">' +
+        '<section class="admin-card">' + cardHead('વિષય પ્રમાણે', '', 'બધા પ્રયત્નોની સરેરાશ સફળતા') +
+          d.subjects.map(function (s, i) {
+            return '<div class="ov-sub"><div class="ov-sub-top"><span>' + escapeHtml(s.name) + '</span><span class="muted">' + s.pct.toFixed(1) + '% · ' + s.n + ' પ્રયત્નો</span></div>' +
+              '<div class="ov-track"><div style="width:' + s.pct + '%;background:' + SUBJECT_COLORS[i % SUBJECT_COLORS.length] + '"></div></div></div>';
+          }).join('') + '</section>' +
+        '<section class="admin-card">' + cardHead('ક્વિઝવાર ગુણ', '', 'પહેલો પ્રયત્ન / શ્રેષ્ઠ ગુણ') +
+          '<div class="table-wrap roster-wrap"><table class="summary-table"><thead><tr><th>ક્વિઝ</th><th>પહેલો</th><th>શ્રેષ્ઠ</th><th>પ્રયત્નો</th></tr></thead><tbody>' +
+          d.quizzes.map(function (q) {
+            return '<tr><td>' + escapeHtml(q.title) + '</td><td>' + q.first + ' / ' + q.total + '</td><td><b>' + q.best + ' / ' + q.total + '</b></td><td>' + q.attempts + '</td></tr>';
+          }).join('') + '</tbody></table></div></section>' +
+      '</div>' +
+
+      '<section class="admin-card">' +
+        '<div class="ov-card-head"><div><h2>ક્ષમતા આધારિત પ્રદર્શન</h2><p class="muted">આ બાળકના બધા પ્રયત્નોના જવાબ પરથી · ઓછી સફળતા પહેલાં</p></div>' +
+          (comp.items.length ? '<div class="ov-card-tools"><input class="field ov-search" id="report-q" placeholder="ક્ષમતાનું નામ અથવા કોડ શોધો"></div>' : '') + '</div>' +
+        (comp.items.length
+          ? '<div class="table-wrap ov-comp-wrap"><table class="summary-table ov-table"><thead><tr><th>વિષય / કોડ</th><th>ક્ષમતા</th><th>સાચા / કુલ</th><th>સફળતા</th><th>અભ્યાસ સૂચક</th></tr></thead>' +
+            '<tbody id="report-comp">' + reportCompBody() + '</tbody></table></div>' +
+            (comp.all > comp.attempts ? '<p class="hint">' + (comp.all - comp.attempts) + ' પ્રયત્નોના પ્રશ્નોની ક્ષમતા "ક્ષમતાઓ" Sheet માં નથી, એટલે અહીં ગણાયા નથી.</p>' : '')
+          : '<div class="ov-note">' + dm('info') + '<span>આ બાળકે આપેલી ક્વિઝના પ્રશ્નોની ક્ષમતા હજુ નોંધાઈ નથી. DIET <b>ક્ષમતાઓ</b> Sheet ભરે પછી અહીં દેખાશે.</span></div>') +
+      '</section>' +
+
+      '<section class="admin-card">' + cardHead('પ્રયત્નોનો ઇતિહાસ', d.history.length + ' પ્રયત્નો', 'નવો પ્રયત્ન ઉપર') +
+        '<div class="table-wrap roster-wrap"><table class="summary-table"><thead><tr><th>સમય</th><th>ક્વિઝ</th><th>પ્રયત્ન</th><th>ગુણ</th></tr></thead><tbody>' +
+        d.history.map(function (h) {
+          return '<tr><td>' + escapeHtml(h.t) + '</td><td>' + escapeHtml(h.title) + '</td><td>' + h.no + '</td><td>' + h.score + ' / ' + h.total + '</td></tr>';
+        }).join('') + '</tbody></table></div></section>';
+    dashRoot().innerHTML = html;
+    bindReport();
+  }
+
+  function bindReport() {
+    $('report-back').addEventListener('click', function () {
+      if (report.back) report.back(); else renderHome();
+    });
+    if ($('report-q')) $('report-q').addEventListener('input', function () {
+      report.compQuery = this.value;
+      $('report-comp').innerHTML = reportCompBody();
+    });
+    dashRoot().querySelectorAll('[data-xl="report"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = report.data;
+        var st = d.student;
+        var sheets = [
+          { name: 'ક્વિઝ', rows: [['ક્વિઝ', 'વિષય', 'સેટ', 'પહેલો ગુણ', 'શ્રેષ્ઠ ગુણ', 'કુલ', 'પ્રયત્નો']].concat(d.quizzes.map(function (q) {
+            return [q.title, q.subject, q.set, q.first, q.best, q.total, q.attempts]; })) },
+          { name: 'ક્ષમતા', rows: [['વિષય', 'ક્ષમતા કોડ', 'ક્ષમતા', 'સાચા', 'કુલ', 'સફળતા %', 'અભ્યાસ સૂચક']].concat(d.competency.items.map(function (c) {
+            return [c.sub, c.code, c.name, c.right, c.of, c.pct, COMP_LABELS[c.band]]; })) }
+        ];
+        downloadXlsx(('પરખ-' + st.std + '-' + st.roll + '-' + st.name + '.xlsx').replace(/[\\/:*?"<>|\s]+/g, '_'), sheets);
+      });
+    });
   }
 </script>
 
