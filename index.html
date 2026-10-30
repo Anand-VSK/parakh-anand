@@ -326,6 +326,20 @@
   .ov-avg .ov-track { width: 80px; height: 6px; flex-shrink: 0; }
   .ov-avg span { background: #ede9fe; color: #4c1d95; font-weight: 700; padding: 3px 10px; border-radius: 8px; font-size: .9rem; white-space: nowrap; }
   .ov-more { margin-top: 12px; width: 100%; }
+  .ov-search { min-height: 44px; font-size: .98rem; width: 260px; max-width: 100%; }
+  .ov-comp-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 720px) { .ov-comp-cards { grid-template-columns: 1fr; } .ov-card-head { flex-wrap: wrap; } .ov-search { width: 100%; } }
+  .ov-comp-cards > div { background: linear-gradient(135deg, #f5f3ff, #eef2ff); border: 1px solid #e0e7ff; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .ov-comp-cards span { color: #475569; font-size: .9rem; }
+  .ov-comp-cards b { font-size: 1.9rem; font-weight: 800; color: #4338ca; line-height: 1.1; }
+  .ov-note { display: flex; gap: 8px; align-items: flex-start; background: #eff6ff; border-left: 4px solid #60a5fa; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-size: .92rem; color: #1e3a8a; }
+  .ov-note .ms { color: #2563eb; margin: 0; }
+  .ov-comp-wrap { max-height: 520px; overflow-y: auto; }
+  .ov-comp-wrap thead th { position: sticky; top: 0; background: #f8fafc; z-index: 1; }
+  .ov-pct { background: #ede9fe; color: #4c1d95; font-weight: 700; padding: 3px 10px; border-radius: 8px; white-space: nowrap; }
+  .ov-band { display: inline-block; padding: 3px 10px; border-radius: 8px; font-weight: 700; font-size: .88rem; white-space: nowrap; }
+  .ov-band.good { background: #dcfce7; color: #166534; } .ov-band.mid { background: #fef3c7; color: #92400e; } .ov-band.low { background: #fee2e2; color: #991b1b; }
+  .ov-details { margin-top: 8px; } .ov-details summary { cursor: pointer; color: #334155; font-weight: 600; }
   @media (max-width: 520px) { .ov-hero { padding: 20px 16px; } .ov-hero h1 { font-size: 1.7rem; } .ov-hero-side { align-items: flex-start; }
     .ov-kpi-v { font-size: 2rem; } .ov-head-tools { width: 100%; } .ov-head-tools .field { flex: 1; } }
 
@@ -2042,6 +2056,7 @@
         '<div class="ov-two">' + subjectCard(d) + histCard(d) + '</div>' +
         dayCard(d) +
         '<div class="ov-two">' + setCard(d) + questionCard(d) + '</div>' +
+        competencyCard(d) +
         schoolCard(d);
     }
     $('ov-root').innerHTML = html;
@@ -2135,6 +2150,56 @@
       '<p class="hint">જુદા વિષય / સેટમાં એક જ ક્રમાંકે જુદા પ્રશ્નો હોય છે. ચોક્કસ પ્રશ્નનું પરિણામ જોવા વિષય અને સેટ પસંદ કરો.</p></section>';
   }
 
+  // --- ક્ષમતા આધારિત પ્રદર્શન ---
+  var COMP_LABELS = { good: 'સારી પ્રગતિ', mid: 'વધુ અભ્યાસ', low: 'સઘન મહાવરો' };
+
+  function competencyRows(d) {
+    var q = (overview.compQuery || '').trim().toLowerCase();
+    return d.competency.items.filter(function (c) {
+      return !q || (c.code + ' ' + c.name + ' ' + c.sub).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function competencyBody(d) {
+    var rows = competencyRows(d);
+    if (!rows.length) return '<tr><td colspan="6" class="muted">આ શોધમાં કોઈ ક્ષમતા નથી.</td></tr>';
+    return rows.map(function (c) {
+      return '<tr><td><span class="muted">' + escapeHtml(c.sub || '—') + '</span><br><b>' + escapeHtml(c.code) + '</b></td>' +
+        '<td>' + escapeHtml(c.name || '—') + '</td><td>' + ovNum(c.qs) + '</td><td>' + ovNum(c.right) + ' / ' + ovNum(c.of) + '</td>' +
+        '<td><span class="ov-pct">' + c.pct.toFixed(1) + '%</span></td>' +
+        '<td><span class="ov-band ' + c.band + '">' + COMP_LABELS[c.band] + '</span></td></tr>';
+    }).join('');
+  }
+
+  function competencyCard(d) {
+    var c = d.competency;
+    var head = '<div class="ov-card-head"><div><h2>ક્ષમતા આધારિત પ્રદર્શન</h2><p class="muted">' +
+      (d.source === 'demo' ? 'વિષય + સેટ + પ્રશ્ન ક્રમાંકના આધારે' : 'પ્રશ્નના LO કોડ (અથવા વિષય + સેટ + પ્રશ્ન ક્રમાંક) ના આધારે') + '</p></div>';
+    if (!c || !c.items.length) {
+      return '<section class="admin-card">' + head + '</div><div class="ov-note">' + dm('info') +
+        '<span>ક્ષમતા મેળવણી હજુ નથી. Spreadsheet ની <b>ક્ષમતાઓ</b> Sheet માં દરેક પ્રશ્ન માટે ધોરણ, વિષય, સેટ, પ્રશ્ન ક્રમ, ક્ષમતા કોડ અને ક્ષમતા લખો. ' +
+        'પરખની ક્વિઝમાં પ્રશ્નનો "LO કોડ" ભર્યો હોય તો ક્ષમતા કોડ અને ક્ષમતાનું નામ પૂરતું છે.</span></div></section>';
+    }
+    return '<section class="admin-card">' + head +
+        '<div class="ov-card-tools"><input class="field ov-search" id="ov-comp-q" placeholder="ક્ષમતાનું નામ અથવા કોડ શોધો" value="' + escapeHtml(overview.compQuery || '') + '">' +
+        xlButton('ov-comp') + '</div></div>' +
+      '<div class="ov-comp-cards">' +
+        '<div><span>ક્ષમતા સાથે મેળ ખાતા પ્રયત્નો</span><b>' + ovNum(c.attempts) + '</b></div>' +
+        '<div><span>ક્ષમતા ગણતરીમાં ગણ્યા જવાબો</span><b>' + ovNum(c.answers) + '</b></div>' +
+        '<div><span>ક્ષમતાવાર એકંદર સફળતા</span><b>' + (c.pct === null ? '—' : c.pct.toFixed(1) + '%') + '</b></div>' +
+      '</div>' +
+      (c.all > c.attempts ? '<div class="ov-note">' + dm('info') + '<span>' + ovNum(c.attempts) + ' / ' + ovNum(c.all) +
+        ' પ્રયત્નોમાં ક્ષમતા મેળવણી ઉપલબ્ધ છે. બાકીના ' + ovNum(c.all - c.attempts) +
+        ' પ્રયત્નોમાં વિષય / સેટ નોંધાયેલ નથી અથવા તે પ્રશ્નોની ક્ષમતા <b>ક્ષમતાઓ</b> Sheet માં નથી.</span></div>' : '') +
+      '<div class="table-wrap ov-comp-wrap"><table class="summary-table ov-table"><thead><tr><th>વિષય / કોડ</th><th>ક્ષમતા</th><th>જુદા પ્રશ્નો</th>' +
+        '<th>મળેલા / સાચા જવાબ</th><th>સફળતા</th><th>અભ્યાસ સૂચક</th></tr></thead><tbody id="ov-comp-body">' + competencyBody(d) + '</tbody></table></div>' +
+      '<p class="hint">સફળતા = સાચા જવાબ ÷ ગણ્યા જવાબ × 100 (દરેક પ્રયત્ન ગણાય છે). 70% કે વધુ: સારી પ્રગતિ · 40–69%: વધુ અભ્યાસ · 40% થી ઓછું: સઘન મહાવરો. ઓછી સફળતા પહેલાં.</p>' +
+      '<details class="ov-details"><summary>પ્રશ્નબેંક અને ક્ષમતા મેળવણી વિશે</summary><p class="hint">' +
+        '"ક્ષમતાઓ" Sheet માં ધોરણ + વિષય + સેટ + પ્રશ્ન ક્રમ પ્રમાણે ક્ષમતા કોડ અને ક્ષમતાનું નામ લખેલું હોય છે. ' +
+        'પરખની ક્વિઝમાં પ્રશ્નનો LO કોડ ભર્યો હોય તો તે પહેલો ગણાય. "જુદા પ્રશ્નો" = આ ક્ષમતાના કેટલા અલગ પ્રશ્નો આ પસંદગીમાં આવ્યા.</p></details>' +
+      '</section>';
+  }
+
   function schoolCard(d) {
     var rows = d.schools.slice(0, overview.schoolRows);
     return '<section class="admin-card">' + cardHead('શાળાવાર સરખામણી', ovNum(d.schools.length) + ' શાળાઓ',
@@ -2178,6 +2243,19 @@
     });
     root.querySelectorAll('[data-school]').forEach(function (b) {
       b.addEventListener('click', function () { setOverview({ school: b.getAttribute('data-school') }); window.scrollTo(0, 0); });
+    });
+    if ($('ov-comp-q')) $('ov-comp-q').addEventListener('input', function () {
+      overview.compQuery = this.value;
+      $('ov-comp-body').innerHTML = competencyBody(overview.data);
+    });
+    root.querySelectorAll('[data-xl="ov-comp"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = overview.data;
+        var rows = [['વિષય', 'ક્ષમતા કોડ', 'ક્ષમતા', 'જુદા પ્રશ્નો', 'સાચા જવાબ', 'ગણ્યા જવાબ', 'સફળતા %', 'અભ્યાસ સૂચક']].concat(competencyRows(d).map(function (c) {
+          return [c.sub, c.code, c.name, c.qs, c.right, c.of, c.pct, COMP_LABELS[c.band]];
+        }));
+        downloadXlsx(('પરખ-ક્ષમતા-' + (d.source === 'demo' ? 'ડેમો' : 'પરિણામ') + '.xlsx'), [{ name: 'ક્ષમતા', rows: rows }]);
+      });
     });
     if ($('ov-more')) $('ov-more').addEventListener('click', function () { overview.schoolRows += 100; drawOverview(); });
     root.querySelectorAll('[data-xl="ov-schools"]').forEach(function (b) {
