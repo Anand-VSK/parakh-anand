@@ -216,7 +216,7 @@
   .crumb { color: #4338ca; font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
   .crumb:hover { background: #eef2ff; }
   .crumb-sep { color: #94a3b8; margin: 0; }
-  .dash-filters { display: grid; grid-template-columns: auto 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .dash-filters { display: grid; grid-template-columns: auto repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: center; margin-bottom: 14px; }
   .dash-filters .chips { margin: 0; }
   @media (max-width: 720px) { .dash-filters { grid-template-columns: 1fr; } }
   .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -1689,6 +1689,9 @@
         '<select class="field" id="f-subject"><option value="">બધા વિષય</option>' + subjects.map(function (s) {
           return '<option' + (s === d.filters.subject ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
         }).join('') + '</select>' +
+        ((d.filters.types || []).length ? '<select class="field" id="f-type"><option value="">બધા પ્રકારની શાળા</option>' + d.filters.types.map(function (t) {
+          return '<option' + (t === d.filters.type ? ' selected' : '') + '>' + escapeHtml(t) + '</option>';
+        }).join('') + '</select>' : '') +
         '<select class="field" id="f-quiz"><option value="">બધી ક્વિઝ</option>' + d.filters.quizzes.map(function (q) {
           return '<option value="' + escapeHtml(q.id) + '"' + (q.id === d.filters.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
         }).join('') + '</select>' +
@@ -1722,6 +1725,7 @@
     });
     $('f-subject').addEventListener('change', function () { go({ subject: this.value, quizId: '' }); });
     $('f-quiz').addEventListener('change', function () { go({ quizId: this.value }); });
+    if ($('f-type')) $('f-type').addEventListener('change', function () { go({ type: this.value }); });
     dashRoot().querySelectorAll('[data-drill]').forEach(function (b) {
       b.addEventListener('click', function () { go({ level: b.getAttribute('data-level'), id: b.getAttribute('data-drill') }); });
     });
@@ -1886,7 +1890,7 @@
     else if (kind === 'questions') job = downloadXlsx(fileName('પ્રશ્ન-વિશ્લેષણ'), [{ name: 'પ્રશ્નો', rows: questionRowsForExcel(d) }, { name: 'LO', rows: loRowsForExcel(d) }]);
     else if (kind === 'status') job = downloadXlsx(fileName((dash.status.quizId || '') + '-આપી-બાકી'), [{ name: 'આપી-બાકી', rows: statusRowsForExcel(dash.status) }]);
     else {
-      job = callServer('apiExportResults', getToken(), { level: d.unit.level, id: d.unit.id, std: d.filters.std || '', quizId: d.filters.quizId || '' })
+      job = callServer('apiExportResults', getToken(), { level: d.unit.level, id: d.unit.id, std: d.filters.std || '', quizId: d.filters.quizId || '', type: d.filters.type || '' })
         .then(function (r) {
           if (handleExpired(r)) return;
           if (!r.ok) throw new Error(r.message);
@@ -2001,6 +2005,7 @@
         '<div class="ov-card-head"><h2>' + dm('filter_alt') + 'પરિણામો તપાસો</h2>' +
           '<button type="button" class="btn-link" id="ov-clear">' + dm('filter_alt_off') + 'ફિલ્ટર દૂર કરો</button></div>' +
         '<div class="ov-grid">' +
+          (o.types.length ? ovSelect('ov-type', 'શાળાનો પ્રકાર', f.type, [['', 'બધા પ્રકાર']].concat(o.types.map(function (t) { return [t, t]; }))) : '') +
           (o.stds.length > 1 ? ovSelect('ov-std', 'ધોરણ', f.std, [['', 'બધાં ધોરણ']].concat(o.stds.map(function (s) { return [s, 'ધોરણ ' + s]; }))) : '') +
           ovSelect('ov-taluka', 'તાલુકો', f.taluka, [['', 'બધા તાલુકા']].concat(o.talukas.map(function (t) { return [t, t]; })), d.lockTaluka) +
           ovSelect('ov-school', 'શાળા', f.school, [['', 'બધી શાળાઓ']].concat(o.schools.map(function (s) { return [s.k, s.name + (f.taluka ? '' : ' (' + s.tk + ')')]; }))) +
@@ -2150,7 +2155,7 @@
     root.querySelectorAll('[data-src]').forEach(function (b) {
       b.addEventListener('click', function () { overview.params = { source: b.getAttribute('data-src') }; overview.schoolRows = 50; loadOverview(false, true); });
     });
-    [['ov-std', 'std'], ['ov-taluka', 'taluka'], ['ov-school', 'school'], ['ov-subject', 'subject'], ['ov-set', 'set'],
+    [['ov-type', 'type'], ['ov-std', 'std'], ['ov-taluka', 'taluka'], ['ov-school', 'school'], ['ov-subject', 'subject'], ['ov-set', 'set'],
       ['ov-from', 'from'], ['ov-to', 'to'], ['ov-band', 'band']].forEach(function (pair) {
       var el = $(pair[0]);
       if (!el) return;
@@ -2158,7 +2163,7 @@
         var ch = {};
         ch[pair[1]] = this.value;
         // તાલુકો બદલાય તો જૂની શાળા પસંદગી રદ.
-        if (pair[1] === 'taluka' || pair[1] === 'std') ch.school = '';
+        if (pair[1] === 'taluka' || pair[1] === 'std' || pair[1] === 'type') ch.school = '';
         setOverview(ch);
       });
     });
