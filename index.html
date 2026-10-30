@@ -2,6 +2,7 @@
 <html lang="gu">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data: blob:; connect-src https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>પરખ – આણંદ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -249,6 +250,10 @@
   .st-done { color: #166534; font-weight: 700; } .st-pending { color: #b45309; font-weight: 700; }
   .st-done .ms, .st-pending .ms { font-size: 1.1em; }
 
+  .xl-bar { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
+  .admin-card h2 .xl-btn { margin-left: auto; width: 36px; height: 36px; }
+  .admin-card h2 { gap: 4px; }
+
   /* --- DIET ક્વિઝ મેકર --- */
   .admin-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
   .admin-title { display: flex; align-items: center; font-size: 1.5rem; font-weight: 800; margin: 0; }
@@ -323,9 +328,27 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults"];
+  var TIMEOUT_MS = 45000;
+  var LONG = {"apiExportResults":120000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
+    // સર્વર જવાબ ન આપે તો સ્ક્રીન કાયમ "ચાલુ છે..." પર ન રહે.
+    var finished = false;
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+      if (finished) return;
+      finished = true;
+      if (ctrl) ctrl.abort();
+      if (failure) failure(new Error('timeout'));
+    }, LONG[fn] || TIMEOUT_MS);
+    function settle(fn2, value) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      if (fn2) fn2(value);
+    }
     fetch(API_URL, {
+      signal: ctrl ? ctrl.signal : undefined,
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // text/plain: CORS preflight વગર
       body: JSON.stringify({ fn: fn, args: args }),
@@ -333,7 +356,7 @@
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    }).then(function (data) { if (success) success(data); }, function (err) { if (failure) failure(err); });
+    }).then(function (data) { settle(success, data); }, function (err) { settle(failure, err); });
   }
   function runner(success, failure) {
     var r = {
@@ -979,6 +1002,48 @@
     return { questions: questions, errors: errors };
   }
 
+  // --- Excel ડાઉનલોડ માટે કોષ્ટક (પહેલી હરોળ = ગુજરાતી હેડર). ડાયસ/ID હંમેશાં લખાણ, જેથી Excel 2.4E+10 ન બનાવે. ---
+
+  function blank(v) { return v === null || v === undefined ? '' : v; }
+
+  function childRowsForExcel(d) {
+    var kids = d.children || [];
+    if (kids.length && kids[0].level === 'student') {
+      return [['નામ', 'ધોરણ', 'રોલ નંબર', 'પ્રયત્નો', 'સરેરાશ %']].concat(kids.map(function (u) {
+        return [u.name, u.std, u.roll, u.attempts, blank(u.avg)];
+      }));
+    }
+    return [['નામ', 'ID', 'આપનાર', 'કુલ બાળકો', 'ભાગીદારી %', 'સરેરાશ %']].concat(kids.map(function (u) {
+      return [u.name, String(u.id), u.participants, u.enrolled, blank(u.participation), blank(u.avg)];
+    }));
+  }
+
+  function questionRowsForExcel(d) {
+    return [['ક્રમ', 'પ્રશ્ન', 'સાચાનો %', 'A %', 'B %', 'C %', 'D %', 'જવાબ નહીં %', 'સાચો જવાબ', 'સૌથી વધુ પસંદ ખોટો']]
+      .concat((d.questions || []).map(function (q) {
+        return [q.n, q.text, blank(q.pct)].concat(q.options.slice(0, 5))
+          .concat([BULK_LETTERS[q.correct] || '', q.wrongTop === null ? '' : BULK_LETTERS[q.wrongTop]]);
+      }));
+  }
+
+  function loRowsForExcel(d) {
+    return [['LO કોડ', 'પ્રશ્નો', 'સાચાનો %']].concat((d.lo || []).map(function (l) { return [l.lo, l.n, blank(l.pct)]; }));
+  }
+
+  function statusRowsForExcel(r) {
+    return [['રોલ નંબર', 'નામ', 'સ્થિતિ', 'પહેલો ગુણ', 'શ્રેષ્ઠ ગુણ', 'કુલ', 'પ્રયત્નો']].concat((r.students || []).map(function (s) {
+      return [s.roll, s.name, s.status, blank(s.first), blank(s.best), blank(s.total), s.attempts];
+    }));
+  }
+
+  // data = {schools: {ડાયસ: નામ}, quizzes: {ID: શીર્ષક}, rows: [[સમય, ક્વિઝ ID, તાલુકો, CRC, ડાયસ, ધોરણ, રોલ, નામ, ગુણ, કુલ, પ્રયત્ન]]}
+  function resultRowsForExcel(data) {
+    return [['સમય', 'ક્વિઝ ID', 'ક્વિઝ', 'તાલુકો', 'CRC', 'ડાયસ કોડ', 'શાળા', 'ધોરણ', 'રોલ નંબર', 'નામ', 'ગુણ', 'કુલ', 'પ્રયત્ન ક્રમ']]
+      .concat(data.rows.map(function (r) {
+        return [r[0], r[1], data.quizzes[r[1]] || '', r[2], String(r[3]), String(r[4]), data.schools[r[4]] || '', r[5], r[6], r[7], r[8], r[9], r[10]];
+      }));
+  }
+
   function xlsxRowsFromSheet(sheetRows) {
     return (sheetRows || []).map(function (r) {
       return (r || []).map(function (x) { return String(x === null || x === undefined ? '' : x).trim(); });
@@ -989,7 +1054,6 @@
   <script>
   // પરખ – આણંદ : DIET ક્વિઝ મેકર (યાદી → નવી ક્વિઝ → એડિટર → પ્રશ્ન ફોર્મ / Paste / Excel → પૂર્વાવલોકન)
   var SUBJECTS = { 5: ['ગણિત', 'પર્યાવરણ', 'ભાષાઓ'], 8: ['ગણિત', 'વિજ્ઞાન', 'ભાષા', 'સામાજિક વિજ્ઞાન'] };
-  var XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
   var STATUS_CLASS = { 'પ્રકાશિત': 'st-pub', 'ડ્રાફ્ટ': 'st-draft', 'બંધ': 'st-closed' };
   var MAX_IMAGE_WIDTH = 1200;
   var admin = { filter: 'all', quizzes: [], current: null, image: null, bulk: null };
@@ -1382,12 +1446,9 @@
   }
 
   function loadXlsx(done) {
-    if (window.XLSX) { done(); return; }
-    var s = document.createElement('script');
-    s.src = XLSX_URL;
-    s.onload = done;
-    s.onerror = function () { showAdminError('bulk-error', 'Excel સાધન લોડ ન થયું. નેટ તપાસો અથવા Paste વાપરો.'); };
-    document.head.appendChild(s);
+    loadScript('xlsx').then(done, function () {
+      showAdminError('bulk-error', 'Excel સાધન લોડ ન થયું. નેટ તપાસો અથવા Paste વાપરો.');
+    });
   }
 
   function onBulkFile(e) {
@@ -1468,7 +1529,6 @@
 
   <script>
   // પરખ – આણંદ : ડેશબોર્ડ (DDO/DPEO/DIET/BRC/CRC/શાળા) — દરેકને પોતાનો વિસ્તાર, ક્લિક કરીને નીચે જાઓ.
-  var QR_URL = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
   var LEVEL_LABELS = { district: 'જિલ્લો', taluka: 'તાલુકો', crc: 'ક્લસ્ટર', school: 'શાળા', student: 'બાળક' };
   var BUCKET_LABELS = ['0–30%', '31–60%', '61–80%', '81–100%'];
   var dash = { params: {}, data: null, sortKey: 'name', status: null, statusFilter: 'all' };
@@ -1499,6 +1559,7 @@
 
   function renderDashboard(params, fromHistory) {
     dash.params = params || {};
+    document.querySelectorAll('[data-home]').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-home') === 'dash'); });
     if (!fromHistory) navPush('dash', dash.params);
     // જલદી ક્લિક કરો તો જૂનો (મોડો આવેલો) જવાબ નવી સ્ક્રીન પર ન લખાય.
     var seq = dash.seq = (dash.seq || 0) + 1;
@@ -1542,6 +1603,7 @@
           return '<option value="' + escapeHtml(q.id) + '"' + (q.id === d.filters.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
         }).join('') + '</select>' +
       '</div>' +
+      '<div class="xl-bar"><button type="button" class="btn-ghost" data-xl="results">' + dm('download') + 'પૂરું પરિણામ (Excel)</button></div>' +
       '<div class="kpis">' +
         kpi('groups', 'કુલ બાળકો', c.enrolled) +
         kpi('how_to_reg', d.filters.quizId ? 'ક્વિઝ આપનાર' : 'ક્વિઝ આપનાર બાળકો', c.participants) +
@@ -1576,6 +1638,7 @@
     dashRoot().querySelectorAll('[data-sort]').forEach(function (b) {
       b.addEventListener('click', function () { dash.sortKey = b.getAttribute('data-sort'); drawDashboard(); });
     });
+    bindXl(dashRoot());
     if (d.unit.level === 'school') loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
   }
 
@@ -1589,7 +1652,7 @@
     var rows = d.children.slice();
     var k = dash.sortKey;
     if (k !== 'name' && rows[0][k] !== undefined) rows.sort(function (a, b) { return (b[k] === null ? -1 : b[k]) - (a[k] === null ? -1 : a[k]); });
-    return '<div class="admin-card"><h2>' + dm(isStudent ? 'person' : 'account_tree') + LEVEL_LABELS[d.children[0].level] + ' પ્રમાણે</h2>' +
+    return '<div class="admin-card"><h2>' + dm(isStudent ? 'person' : 'account_tree') + LEVEL_LABELS[d.children[0].level] + ' પ્રમાણે' + xlButton('children') + '</h2>' +
       '<div class="table-wrap"><table class="summary-table dash-table"><thead><tr>' +
         '<th><button type="button" data-sort="name">નામ</button></th>' +
         (isStudent ? '<th>રોલ</th><th>પ્રયત્નો</th>' : '<th><button type="button" data-sort="participants">આપનાર</button></th><th><button type="button" data-sort="participation">ભાગીદારી</button></th>') +
@@ -1616,7 +1679,7 @@
 
   function questionCards(d) {
     if (!d.questions || !d.cards.participants) return '';
-    return '<div class="admin-card"><h2>' + dm('quiz') + 'પ્રશ્ન વિશ્લેષણ <small class="muted">(અઘરા પહેલાં)</small></h2>' +
+    return '<div class="admin-card"><h2>' + dm('quiz') + 'પ્રશ્ન વિશ્લેષણ <small class="muted">(અઘરા પહેલાં)</small>' + xlButton('questions') + '</h2>' +
       d.questions.map(function (q) {
         return '<div class="qa">' +
           '<div class="qa-head"><span class="aq-num">' + q.n + '</span><div class="grow">' + escapeHtml(q.text).replace(/\n/g, '<br>') + '</div>' +
@@ -1660,7 +1723,7 @@
         '<div class="link-row"><input class="field" id="kid-link" readonly value="' + escapeHtml(r.link) + '">' +
         '<button type="button" class="btn-ghost" id="copy-link">' + dm('content_copy') + 'Copy</button></div>' +
         '<div id="qr" class="qr"></div><p class="hint">બાળકો આ લિંક ખોલી ડાયસ કોડ, ધોરણ અને રોલ નંબરથી પ્રવેશ કરે.</p></div>' +
-      '<div class="admin-card"><h2>' + dm('checklist') + 'ક્વિઝ આપી / બાકી</h2>' +
+      '<div class="admin-card"><h2>' + dm('checklist') + 'ક્વિઝ આપી / બાકી' + xlButton('status') + '</h2>' +
         '<select class="field" id="st-quiz">' + r.quizzes.map(function (q) {
           return '<option value="' + escapeHtml(q.id) + '"' + (q.id === r.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
         }).join('') + '</select>' +
@@ -1696,16 +1759,58 @@
     document.querySelectorAll('[data-sf]').forEach(function (b) {
       b.addEventListener('click', function () { dash.statusFilter = b.getAttribute('data-sf'); drawSchoolBox(); });
     });
+    bindXl($('school-box'));
     drawQr(r.link);
   }
 
+  // --- Excel ડાઉનલોડ ---
+
+  function xlButton(kind) {
+    return '<button type="button" class="icon-btn xl-btn" data-xl="' + kind + '" aria-label="Excel ડાઉનલોડ" title="Excel ડાઉનલોડ">' + dm('download') + '</button>';
+  }
+
+  function fileName(part) {
+    var d = dash.data;
+    var bits = ['પરખ', d.unit.name];
+    if (d.filters.std) bits.push('ધો' + d.filters.std);
+    if (d.filters.quizId) bits.push(d.filters.quizId);
+    bits.push(part);
+    return bits.join('-').replace(/[\\/:*?"<>|\s]+/g, '_') + '.xlsx';
+  }
+
+  function bindXl(scope) {
+    scope.querySelectorAll('[data-xl]').forEach(function (b) {
+      b.addEventListener('click', function () { downloadKind(b.getAttribute('data-xl'), b); });
+    });
+  }
+
+  function downloadKind(kind, btn) {
+    var d = dash.data;
+    var label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin') + (btn.classList.contains('icon-btn') ? '' : 'તૈયાર થાય છે...');
+    function done() { btn.disabled = false; btn.innerHTML = label; }
+    function fail(message) { done(); window.alert(message || 'Excel બની શક્યું નહીં. નેટ તપાસો.'); }
+    var job;
+    if (kind === 'children') job = downloadXlsx(fileName(LEVEL_LABELS[d.children[0].level]), [{ name: LEVEL_LABELS[d.children[0].level], rows: childRowsForExcel(d) }]);
+    else if (kind === 'questions') job = downloadXlsx(fileName('પ્રશ્ન-વિશ્લેષણ'), [{ name: 'પ્રશ્નો', rows: questionRowsForExcel(d) }, { name: 'LO', rows: loRowsForExcel(d) }]);
+    else if (kind === 'status') job = downloadXlsx(fileName((dash.status.quizId || '') + '-આપી-બાકી'), [{ name: 'આપી-બાકી', rows: statusRowsForExcel(dash.status) }]);
+    else {
+      job = callServer('apiExportResults', getToken(), { level: d.unit.level, id: d.unit.id, std: d.filters.std || '', quizId: d.filters.quizId || '' })
+        .then(function (r) {
+          if (handleExpired(r)) return;
+          if (!r.ok) throw new Error(r.message);
+          if (!r.rows.length) throw new Error('આ પસંદગીમાં કોઈ પરિણામ નથી.');
+          return downloadXlsx(fileName('પરિણામ'), [{ name: 'પરિણામ', rows: resultRowsForExcel(r) }]);
+        });
+    }
+    job.then(done, function (e) { fail(e && e.message && !/load failed/.test(e.message) ? e.message : ''); });
+  }
+
   function drawQr(link) {
-    function draw() { try { $('qr').innerHTML = ''; new QRCode($('qr'), { text: link, width: 168, height: 168 }); } catch (e) {} }
-    if (window.QRCode) { draw(); return; }
-    var s = document.createElement('script');
-    s.src = QR_URL;
-    s.onload = draw;
-    document.head.appendChild(s);
+    loadScript('qrcode').then(function () {
+      try { $('qr').innerHTML = ''; new QRCode($('qr'), { text: link, width: 168, height: 168 }); } catch (e) {}
+    }, function () { $('qr').innerHTML = '<p class="hint">QR બની શક્યો નહીં — લિંક copy કરીને મોકલો.</p>'; });
   }
 </script>
 
@@ -1737,6 +1842,47 @@
       // GitHub Pages નું જૂનું પેજ અને નવો સર્વર: ફંક્શન ન હોય તો અટકી ન રહો.
       if (typeof runner[fnName] !== 'function') { resolve({ ok: false, message: 'પેજ જૂનું છે. પેજ reload કરો.' }); return; }
       runner[fnName].apply(runner, args);
+    });
+  }
+
+  // CDN scripts: integrity (SRI) સાથે — CDN પરની ફાઇલ બદલાય તો લોડ જ ન થાય.
+  var CDN_SCRIPTS = {
+    xlsx: { src: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+      integrity: 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw', ready: function () { return !!window.XLSX; } },
+    qrcode: { src: 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+      integrity: 'sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU', ready: function () { return !!window.QRCode; } }
+  };
+
+  function loadScript(name) {
+    var lib = CDN_SCRIPTS[name];
+    if (lib.ready()) return Promise.resolve();
+    if (!lib.loading) {
+      lib.loading = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = lib.src;
+        s.integrity = lib.integrity;
+        s.crossOrigin = 'anonymous';
+        s.onload = function () { resolve(); };
+        s.onerror = function () { lib.loading = null; reject(new Error('load failed')); };
+        document.head.appendChild(s);
+      });
+    }
+    return lib.loading;
+  }
+
+  // sheets = [{name, rows: [[...], ...]}] → .xlsx ડાઉનલોડ.
+  function downloadXlsx(filename, sheets) {
+    return loadScript('xlsx').then(function () {
+      var wb = XLSX.utils.book_new();
+      sheets.forEach(function (sh) {
+        var ws = XLSX.utils.aoa_to_sheet(sh.rows);
+        ws['!cols'] = (sh.rows[0] || []).map(function (h, i) {
+          var max = sh.rows.reduce(function (m, r) { return Math.max(m, String(r[i] === undefined ? '' : r[i]).length); }, 6);
+          return { wch: Math.min(60, max + 2) };
+        });
+        XLSX.utils.book_append_sheet(wb, ws, String(sh.name).slice(0, 31));
+      });
+      XLSX.writeFile(wb, filename);
     });
   }
 
@@ -1965,6 +2111,8 @@
     callServer('apiGetSession', token).then(function (r) {
       if (!r.ok) { logoutLocal(r.message); return; }
       state.session = r.session;
+      // #quiz જેવી લિંક પર reload: જૂની સ્થિતિ નહીં, હોમથી શરૂ.
+      navReplace('home');
       if (state.session.mustChange) { renderTopbar(); openChange(true); } else renderHome();
     });
   }
