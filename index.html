@@ -2039,11 +2039,12 @@
     var o = d.options;
     var c = d.cards;
     var demo = d.source === 'demo';
+    var school = d.scope === 'school';
     var stdText = f.std ? 'ધોરણ ' + f.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
     var html =
       '<section class="ov-hero">' +
         '<div class="ov-hero-text"><span class="ov-pill">' + dm('insights') + (demo ? 'ડેમો · e-NAS પરિણામ' : 'પરખ પરિણામ') + '</span>' +
-          '<h1>પરિણામ ઝલક</h1><p>' + stdText + 'ના વિદ્યાર્થીઓ માટે · અભ્યાસથી પ્રગતિ તરફ</p></div>' +
+          '<h1>પરિણામ ઝલક</h1><p>' + (school ? escapeHtml(d.schoolName || '') + ' · ' : '') + stdText + 'ના વિદ્યાર્થીઓ માટે · અભ્યાસથી પ્રગતિ તરફ</p></div>' +
         '<div class="ov-hero-side">' +
           (d.demoAllowed ? '<div class="ov-source">' + [['parakh', 'પરખ પરિણામ'], ['demo', 'ડેમો ડેટા']].map(function (s) {
             return '<button type="button" class="' + (d.source === s[0] ? 'on' : '') + '" data-src="' + s[0] + '">' + s[1] + '</button>';
@@ -2056,10 +2057,10 @@
         '<div class="ov-card-head"><h2>' + dm('filter_alt') + 'પરિણામો તપાસો</h2>' +
           '<button type="button" class="btn-link" id="ov-clear">' + dm('filter_alt_off') + 'ફિલ્ટર દૂર કરો</button></div>' +
         '<div class="ov-grid">' +
-          (o.types.length ? ovSelect('ov-type', 'શાળાનો પ્રકાર', f.type, [['', 'બધા પ્રકાર']].concat(o.types.map(function (t) { return [t, t]; }))) : '') +
+          (o.types.length && !school ? ovSelect('ov-type', 'શાળાનો પ્રકાર', f.type, [['', 'બધા પ્રકાર']].concat(o.types.map(function (t) { return [t, t]; }))) : '') +
           (o.stds.length > 1 ? ovSelect('ov-std', 'ધોરણ', f.std, [['', 'બધાં ધોરણ']].concat(o.stds.map(function (s) { return [s, 'ધોરણ ' + s]; }))) : '') +
-          ovSelect('ov-taluka', 'તાલુકો', f.taluka, [['', 'બધા તાલુકા']].concat(o.talukas.map(function (t) { return [t, t]; })), d.lockTaluka) +
-          ovSelect('ov-school', 'શાળા', f.school, [['', 'બધી શાળાઓ']].concat(o.schools.map(function (s) { return [s.k, s.name + (f.taluka ? '' : ' (' + s.tk + ')')]; }))) +
+          (school ? '' : ovSelect('ov-taluka', 'તાલુકો', f.taluka, [['', 'બધા તાલુકા']].concat(o.talukas.map(function (t) { return [t, t]; })), d.lockTaluka)) +
+          (school ? '' : ovSelect('ov-school', 'શાળા', f.school, [['', 'બધી શાળાઓ']].concat(o.schools.map(function (s) { return [s.k, s.name + (f.taluka ? '' : ' (' + s.tk + ')')]; })))) +
           ovSelect('ov-subject', 'વિષય', f.subject, [['', 'બધા વિષયો']].concat(o.subjects.map(function (s) { return [s, s]; }))) +
           ovSelect('ov-set', 'સેટ', f.set, [['', 'બધા સેટ']].concat(o.sets.map(function (s) { return [s, 'સેટ ' + s]; }))) +
           '<label class="ov-field"><span>તારીખથી</span><input type="date" class="field" id="ov-from" value="' + escapeHtml(f.from) + '"></label>' +
@@ -2077,8 +2078,11 @@
       '<div class="ov-kpis">' +
         ovKpi('c1', 'quiz', 'કુલ પ્રયત્નો', ovNum(c.attempts), '', 'દરેક પૂર્ણ ક્વિઝનો એક પ્રયત્ન') +
         ovKpi('c2', 'trending_up', 'સરેરાશ ગુણ', c.avg === null ? '—' : c.avg.toFixed(1), '/ 10', c.avgPct === null ? '' : c.avgPct + '% સરેરાશ સફળતા') +
-        ovKpi('c3', 'school', 'શાળાઓ', ovNum(c.schools), '', demo ? 'નોંધાયેલ અલગ શાળાનાં નામ' : 'ક્વિઝ આપનાર શાળાઓ') +
-        ovKpi('c4', 'location_on', 'તાલુકાઓ', ovNum(c.talukas), '', 'પસંદ કરેલા ડેટામાંથી') +
+        (school
+          ? ovKpi('c3', 'groups', 'ક્વિઝ આપનાર બાળકો', ovNum(d.kids.takers), '/ ' + ovNum(d.kids.enrolled), ovNum(d.kids.pending) + ' બાળકો બાકી') +
+            ovKpi('c4', 'percent', 'ભાગીદારી', d.kids.enrolled ? Math.min(100, Math.round(100 * d.kids.takers / d.kids.enrolled)) + '%' : '—', '', 'યાદીનાં બાળકોમાંથી')
+          : ovKpi('c3', 'school', 'શાળાઓ', ovNum(c.schools), '', demo ? 'નોંધાયેલ અલગ શાળાનાં નામ' : 'ક્વિઝ આપનાર શાળાઓ') +
+            ovKpi('c4', 'location_on', 'તાલુકાઓ', ovNum(c.talukas), '', 'પસંદ કરેલા ડેટામાંથી')) +
       '</div>' +
       '<div class="ov-badges">' +
         '<button type="button" data-band="high">8 અથવા વધુ ગુણ <b>' + ovNum(c.high) + '</b></button>' +
@@ -2094,7 +2098,7 @@
         dayCard(d) +
         '<div class="ov-two">' + setCard(d) + questionCard(d) + '</div>' +
         competencyCard(d) +
-        schoolCard(d);
+        (school ? kidsCard(d) : schoolCard(d));
     }
     $('ov-root').innerHTML = html;
     bindOverview();
@@ -2237,6 +2241,27 @@
       '</section>';
   }
 
+  // શાળા લોગીન: બાળકવાર સરખામણી (નબળાં પહેલાં, પછી ક્વિઝ ન આપનાર).
+  function kidsCard(d) {
+    var k = d.kids;
+    var rows = k.students.slice(0, overview.schoolRows);
+    return '<section class="admin-card">' + cardHead('બાળકવાર સરખામણી', ovNum(k.takers) + ' / ' + ovNum(k.enrolled) + ' બાળકો',
+        'પહેલા પ્રયત્નની સરેરાશ (10 માંથી) · ઓછા ગુણ પહેલાં · ધોરણ, વિષય અને સેટ ફિલ્ટર લાગે · નામ પર ક્લિક કરી અહેવાલ જુઓ', xlButton('ov-kids')) +
+      (k.students.length
+        ? '<div class="table-wrap"><table class="summary-table ov-table"><thead><tr><th>બાળકનું નામ</th><th>ધોરણ</th><th>રોલ</th><th>ક્વિઝ</th><th>પ્રયત્નો</th><th>સરેરાશ ગુણ</th><th>8+ ગુણ</th></tr></thead><tbody>' +
+          rows.map(function (s) {
+            return '<tr><td><button type="button" class="drill" data-kid="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + dm('chevron_right') + '</button></td>' +
+              '<td>' + s.std + '</td><td>' + s.roll + '</td><td>' + s.quizzes + '</td><td>' + s.attempts + '</td>' +
+              '<td>' + (s.avg === null ? '<span class="ov-band low">ક્વિઝ બાકી</span>'
+                : '<div class="ov-avg"><div class="ov-track"><div style="width:' + (s.avg * 10) + '%"></div></div><span>' + s.avg.toFixed(1) + ' / 10</span></div>') + '</td>' +
+              '<td>' + s.high + '</td></tr>';
+          }).join('') + '</tbody></table></div>' +
+          (k.students.length > rows.length ? '<button type="button" class="btn-ghost ov-more" id="ov-more">' + dm('expand_more') +
+            'વધુ બાળકો બતાવો (' + ovNum(k.students.length - rows.length) + ' બાકી)</button>' : '')
+        : '<div class="ov-note">' + dm('info') + '<span>બાળકોની યાદી હજુ નથી. <b>વિદ્યાર્થીઓ</b> tab માં ધોરણ 5 અને 8 ની યાદી paste કરો.</span></div>') +
+      '</section>';
+  }
+
   function schoolCard(d) {
     var rows = d.schools.slice(0, overview.schoolRows);
     return '<section class="admin-card">' + cardHead('શાળાવાર સરખામણી', ovNum(d.schools.length) + ' શાળાઓ',
@@ -2277,6 +2302,21 @@
     });
     root.querySelectorAll('[data-set]').forEach(function (b) {
       b.addEventListener('click', function () { setOverview({ set: b.getAttribute('data-set') }); });
+    });
+    root.querySelectorAll('[data-kid]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var back = overview.params;
+        openStudentReport(b.getAttribute('data-kid'), function () { renderOverview(back); });
+      });
+    });
+    root.querySelectorAll('[data-xl="ov-kids"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = overview.data;
+        var rows = [['નામ', 'ધોરણ', 'રોલ નંબર', 'ક્વિઝ', 'પ્રયત્નો', 'સરેરાશ ગુણ (10 માંથી)', '8+ ગુણ']].concat(d.kids.students.map(function (s) {
+          return [s.name, s.std, s.roll, s.quizzes, s.attempts, s.avg === null ? 'ક્વિઝ બાકી' : s.avg, s.high];
+        }));
+        downloadXlsx('પરખ-ઝલક-બાળકવાર.xlsx', [{ name: 'બાળકવાર', rows: rows }]);
+      });
     });
     root.querySelectorAll('[data-school]').forEach(function (b) {
       b.addEventListener('click', function () { setOverview({ school: b.getAttribute('data-school') }); window.scrollTo(0, 0); });
