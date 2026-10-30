@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>પરખ – આણંદ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Gujarati:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0&display=block" rel="stylesheet">
+  <style>
+  :root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --accent: #facc15;
+    --danger-bg: rgba(220, 38, 38, .18);
+    --danger-line: rgba(248, 113, 113, .6);
+  }
+  /* નાનો reset + વપરાતા utility classes (Tailwind CDN ની જગ્યાએ — ફોનમાં ઝડપથી ખૂલે) */
+  *, ::before, ::after { box-sizing: border-box; border: 0 solid; }
+  h1, h2, h3, h4, p { margin: 0; }
+  button { background: transparent; color: inherit; font: inherit; padding: 0; }
+  img { display: block; max-width: 100%; height: auto; }
+  .flex { display: flex; } .grid { display: grid; } .relative { position: relative; }
+  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .items-center { align-items: center; } .shrink-0 { flex-shrink: 0; } .min-w-0 { min-width: 0; }
+  .gap-2 { gap: .5rem; } .gap-3 { gap: .75rem; }
+  .space-y-4 > * + * { margin-top: 1rem; } .space-y-5 > * + * { margin-top: 1.25rem; }
+  .text-center { text-align: center; } .text-lg { font-size: 1.125rem; }
+  .mt-3 { margin-top: .75rem; } .mt-4 { margin-top: 1rem; } .mb-4 { margin-bottom: 1rem; }
+  .py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; } .pr-14 { padding-right: 3.5rem; }
+  .min-h-screen { min-height: 100vh; }
+  * { font-family: 'Anek Gujarati', sans-serif; }
+  input, button, select, textarea { font-family: inherit; }
+  html, body { margin: 0; overflow-x: hidden; }
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+  .hidden { display: none !important; }
+
+  /* Material Symbols (Google Fonts) — બધા icon માટે <span class="ms">નામ</span> */
+  .ms { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; font-size: 1.35em;
+    line-height: 1; display: inline-block; vertical-align: middle; letter-spacing: normal; text-transform: none;
+    white-space: nowrap; direction: ltr; -webkit-font-smoothing: antialiased; font-feature-settings: 'liga';
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; margin-inline-end: .3em; }
+  .btn-primary .ms:last-child { margin-inline: .3em 0; }
+  .eye .ms, .btn-ghost .ms:only-child { margin: 0; }
+  .tab, .btn-primary, .btn-ghost, .btn-link, .card-title, .field-label { display: inline-flex; align-items: center; justify-content: center; }
+  .field-label { display: flex; justify-content: flex-start; }
+  .card-title { display: flex; justify-content: flex-start; }
+  .icon-hero { font-size: 3.4rem; margin: 0; color: #facc15; }
+  .theme-official .icon-hero { color: #4f46e5; }
+  @keyframes spin-icon { to { transform: rotate(360deg); } }
+  .ms.spin { animation: spin-icon 1s linear infinite; }
+
+  /* થીમ: વિદ્યાર્થી/લોગીન = ઘેરો રંગીન; અધિકારી હોમ = હળવો */
+  .theme-student { background: linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #831843 100%); background-attachment: fixed; color: #fff; }
+  .theme-official { background: #f8fafc; color: var(--ink); }
+
+  .page { width: 100%; max-width: 32rem; margin: 0 auto; padding: 0 16px 24px; flex: 1; }
+  .theme-official .page { max-width: 72rem; }
+
+  .brand { text-align: center; padding: 24px 16px 18px; }
+  .brand-org { font-size: .95rem; font-weight: 600; color: #a5f3fc; margin: 0; }
+  .brand-title { font-size: 3rem; line-height: 1.1; font-weight: 800; margin: 4px 0;
+    background: linear-gradient(90deg, #fde047, #fb923c, #f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .brand-sub { font-size: 1.05rem; color: #fbcfe8; margin: 0; font-weight: 500; }
+  .theme-official .brand { display: none; }
+
+  .glass-card { background: rgba(255,255,255,.10); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,.28); border-radius: 24px; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .theme-official .glass-card { background: #fff; border-color: var(--line); box-shadow: 0 6px 24px rgba(15,23,42,.06); backdrop-filter: none; }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 22px rgba(234,179,8,.35); } 50% { box-shadow: 0 0 36px rgba(236,72,153,.6); } }
+  .glow { animation: glow 3s infinite; }
+
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: rgba(0,0,0,.25); padding: 6px; border-radius: 16px; margin-bottom: 20px; }
+  .tab { min-height: 48px; border-radius: 12px; font-size: 1.05rem; font-weight: 700; color: #e9d5ff; background: transparent; border: 0; cursor: pointer; }
+  .tab.active { background: linear-gradient(90deg, #facc15, #f472b6); color: #1e1b4b; }
+
+  .field-label { display: block; font-weight: 700; color: #fbcfe8; margin-bottom: 6px; font-size: 1.02rem; }
+  .theme-official .field-label { color: #334155; }
+  .field { width: 100%; min-height: 52px; padding: 10px 16px; border-radius: 14px; font-size: 1.15rem;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.4); color: #fff; outline: none; }
+  .field::placeholder { color: rgba(255,255,255,.6); }
+  .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(250,204,21,.35); }
+  .theme-official .field { background: #fff; border-color: #cbd5e1; color: var(--ink); }
+  .theme-official .field::placeholder { color: #94a3b8; }
+  .hint { font-size: .88rem; color: #c4b5fd; margin: 6px 0 0; }
+  .theme-official .hint { color: var(--muted); }
+
+  .std-btn { min-height: 56px; border-radius: 14px; font-size: 1.2rem; font-weight: 800; cursor: pointer;
+    background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); color: #fff; }
+  .std-btn.selected { background: linear-gradient(135deg, #22d3ee, #6366f1); border-color: #fde047; box-shadow: 0 0 0 3px rgba(253,224,71,.35); }
+
+  .eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; background: transparent; font-size: 1.2rem; cursor: pointer; }
+
+  .btn-primary { width: 100%; min-height: 56px; border: 0; border-radius: 16px; cursor: pointer; font-size: 1.25rem; font-weight: 800; color: #1e1b4b;
+    background: linear-gradient(90deg, #facc15, #ec4899, #8b5cf6); box-shadow: 0 10px 24px rgba(236,72,153,.35); transition: transform .15s, opacity .15s; }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-primary:disabled { opacity: .7; cursor: wait; }
+  .theme-official .btn-primary { color: #fff; background: linear-gradient(90deg, #4f46e5, #7c3aed); box-shadow: 0 8px 18px rgba(79,70,229,.25); }
+  .btn-link { width: 100%; background: none; border: 0; color: inherit; opacity: .8; font-size: 1rem; cursor: pointer; min-height: 44px; }
+  .btn-ghost { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-weight: 600; cursor: pointer; font-size: .98rem; }
+  .theme-student .btn-ghost { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.35); color: #fff; }
+
+  .error-card { background: var(--danger-bg); border: 1px solid var(--danger-line); color: #fecaca; border-radius: 14px; padding: 12px 14px; font-weight: 600; }
+  .theme-official .error-card { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .info-card { background: rgba(34,211,238,.15); border: 1px solid rgba(103,232,249,.5); color: #cffafe; border-radius: 14px; padding: 12px 14px; font-weight: 600; margin-bottom: 16px; }
+
+  .card-title { font-size: 1.5rem; font-weight: 800; margin: 0 0 6px; }
+
+  .topbar { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .theme-student .topbar { background: rgba(30,27,75,.75); backdrop-filter: blur(12px); border-color: rgba(255,255,255,.15); }
+  .topbar-inner { max-width: 72rem; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .role-badge { color: #fff; font-weight: 800; border-radius: 999px; padding: 4px 12px; font-size: .9rem; white-space: nowrap; }
+  .top-name { margin: 0; font-weight: 700; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-scope { margin: 0; font-size: .88rem; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 480px) { .hide-sm { display: none; } .btn-ghost .ms { margin: 0; } }
+
+  .welcome { text-align: center; padding: 32px 20px; }
+  .welcome h2 { font-size: 1.9rem; font-weight: 800; margin: 0 0 8px; }
+  .welcome p { font-size: 1.1rem; margin: 0; opacity: .85; }
+  .welcome .emoji { font-size: 3.2rem; }
+
+  .spinner { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; border: 4px solid rgba(255,255,255,.25); border-top-color: #facc15; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .footer { text-align: center; font-size: .85rem; opacity: .6; padding: 16px; }
+
+  /* --- વિદ્યાર્થી ક્વિઝ --- */
+  .subject-title { display: flex; align-items: center; font-size: 1.25rem; font-weight: 800; margin: 18px 4px 10px; color: #fde68a; }
+  .quiz-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .quiz-card { text-align: left; border-radius: 18px; padding: 14px; min-height: 84px; cursor: pointer; color: #fff;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); display: flex; flex-direction: column; gap: 6px; }
+  .quiz-card:active { transform: scale(.98); }
+  .quiz-card.done { background: rgba(34,197,94,.18); border-color: rgba(134,239,172,.6); }
+  .quiz-set { font-size: 1.2rem; font-weight: 800; }
+  .quiz-status { display: flex; align-items: center; font-size: .9rem; opacity: .9; line-height: 1.3; }
+  .pending-card, .explain { display: flex; gap: 10px; align-items: center; border-radius: 16px; padding: 12px 14px; }
+  .pending-card { background: rgba(250,204,21,.18); border: 1px solid rgba(253,224,71,.6); color: #fef9c3; margin-bottom: 8px; }
+  .grow { flex: 1; min-width: 0; }
+  .btn-small { display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 12px; border: 0;
+    background: #facc15; color: #1e1b4b; font-weight: 800; cursor: pointer; white-space: nowrap; }
+  .quiz-box { padding: 18px; }
+  .quiz-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-weight: 700; margin-bottom: 10px; }
+  .pill { background: rgba(34,211,238,.22); color: #cffafe; border-radius: 999px; padding: 2px 12px; font-size: .9rem; white-space: nowrap; }
+  .progress { height: 8px; background: rgba(255,255,255,.18); border-radius: 999px; overflow: hidden; margin-bottom: 16px; }
+  .progress > div { height: 100%; background: linear-gradient(90deg, #facc15, #ec4899); transition: width .3s; }
+  .q-html { font-size: 1.1rem; line-height: 1.85; overflow-wrap: anywhere; margin-bottom: 14px; }
+  .q-html p { margin: 0 0 10px; white-space: pre-wrap; }
+  .q-html img { max-width: 100%; height: auto; display: block; margin: 10px auto; background: #fff; border-radius: 10px; padding: 6px; }
+  .q-html table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: .95rem; }
+  .q-html th, .q-html td { border: 1px solid rgba(255,255,255,.35); padding: 6px; text-align: center; }
+  .q-html .bank-table-wrap { overflow-x: auto; }
+  .options { display: grid; gap: 10px; }
+  .option { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 56px; padding: 10px 14px; border-radius: 14px; cursor: pointer;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.3); color: #fff; font-size: 1.08rem; }
+  .option.chosen { background: rgba(219,39,119,.55); border-color: #fde047; box-shadow: 0 0 0 2px rgba(253,224,71,.4); }
+  .opt-letter { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.2); color: #fde047; font-weight: 800; }
+  .quiz-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; }
+  .quiz-nav .btn-ghost:disabled { opacity: .4; }
+  .btn-inline { width: auto; min-height: 48px; padding: 0 18px; font-size: 1.05rem; }
+  .review-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+  .review-cell { min-height: 56px; border-radius: 12px; border: 1px solid rgba(255,255,255,.35); background: rgba(34,197,94,.25); color: #fff;
+    font-weight: 800; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  .review-cell small { font-size: .8rem; opacity: .85; }
+  .review-cell.empty { background: rgba(248,113,113,.25); border-color: rgba(248,113,113,.7); }
+  .warn, .okline { display: flex; align-items: center; font-weight: 700; margin: 0 0 14px; }
+  .warn { color: #fecaca; } .okline { color: #bbf7d0; }
+  #q-submit { margin-bottom: 6px; }
+  .result-head { text-align: center; margin-bottom: 14px; }
+  .result-head h2 { font-size: 1.8rem; font-weight: 800; margin: 6px 0 2px; }
+  .result-head p { margin: 0; opacity: .85; }
+  .review-card { border-radius: 18px; padding: 14px; margin-bottom: 12px; border: 1px solid; }
+  .review-card p { margin: 4px 0; }
+  .review-card.ok { background: rgba(22,163,74,.2); border-color: rgba(134,239,172,.55); }
+  .review-card.bad { background: rgba(220,38,38,.18); border-color: rgba(252,165,165,.55); }
+  .review-mark { display: flex; align-items: center; font-weight: 800; margin-bottom: 6px; }
+  .review-card.ok .review-mark .ms { color: #4ade80; } .review-card.bad .review-mark .ms { color: #f87171; }
+  .explain { align-items: flex-start; background: rgba(0,0,0,.25); margin-top: 8px; color: #fbcfe8; }
+  .explain ul { margin: 4px 0 0; padding-left: 18px; }
+  .explain .ms { color: #facc15; }
+
+  /* --- DIET આયાત (હળવી થીમ) --- */
+  .admin-card { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: 0 6px 24px rgba(15,23,42,.06); margin-bottom: 16px; }
+  .admin-card h2 { display: flex; align-items: center; font-size: 1.3rem; font-weight: 800; margin: 0 0 4px; color: var(--ink); }
+  .admin-card .ms { color: #4f46e5; }
+  .seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #eef2ff; padding: 5px; border-radius: 14px; }
+  .seg button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: transparent; font-weight: 700; color: #4338ca; cursor: pointer; }
+  .seg button.on { background: #4f46e5; color: #fff; }
+  .file-drop { display: flex; align-items: center; gap: 10px; border: 2px dashed #c7d2fe; border-radius: 14px; padding: 14px; cursor: pointer; color: #4338ca; font-weight: 600; }
+  .file-drop input { display: none; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: .95rem; margin: 10px 0; }
+  .summary-table th, .summary-table td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left; }
+  .theme-official .progress { background: #e0e7ff; }
+  .import-live { display: flex; align-items: center; gap: 12px; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 14px; padding: 12px 14px; margin: 12px 0 8px; color: #312e81; }
+  .admin-card .btn-primary .ms { color: #fff; }
+  .import-live .ms { font-size: 1.8rem; color: #4f46e5; margin: 0; }
+  .import-live small { display: block; color: #6366f1; margin-top: 2px; }
+  .import-live.done { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+  .import-live.done .ms { color: #16a34a; }
+  .import-pct { font-size: 1.4rem; font-weight: 800; color: #4f46e5; }
+  .import-warn { display: flex; align-items: center; color: #b45309; font-weight: 600; font-size: .95rem; margin: 0 0 8px; }
+  .import-warn .ms { color: #d97706; }
+  .import-log { max-height: 240px; overflow-y: auto; font-size: .92rem; background: #f8fafc; border-radius: 12px; padding: 10px; margin-top: 10px; }
+  .import-log div { display: flex; align-items: center; padding: 2px 0; }
+  .import-log .ok .ms { color: #16a34a; } .import-log .skip .ms { color: #64748b; } .import-log .err .ms { color: #dc2626; }
+  @media (max-width: 380px) { .quiz-grid { grid-template-columns: 1fr; } }
+
+  /* --- ડેશબોર્ડ --- */
+  .light-tabs { background: #eef2ff; max-width: 420px; }
+  .light-tabs .tab { color: #4338ca; }
+  .light-tabs .tab.active { background: #4f46e5; color: #fff; }
+  .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; margin: 4px 0 12px; font-size: 1rem; }
+  .crumb { color: #4338ca; font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+  .crumb:hover { background: #eef2ff; }
+  .crumb-sep { color: #94a3b8; margin: 0; }
+  .dash-filters { display: grid; grid-template-columns: auto 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .dash-filters .chips { margin: 0; }
+  @media (max-width: 720px) { .dash-filters { grid-template-columns: 1fr; } }
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .kpi { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .kpi > .ms { font-size: 2rem; color: #4f46e5; background: #eef2ff; border-radius: 12px; padding: 6px; margin: 0; }
+  .kpi-v { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+  .kpi-l { font-size: .88rem; color: var(--muted); }
+  .muted { color: var(--muted); font-weight: 500; font-size: .85rem; }
+  .brow { display: grid; grid-template-columns: minmax(90px, 38%) 1fr 48px; gap: 10px; align-items: center; margin: 6px 0; font-size: .95rem; }
+  .brow b { text-align: right; }
+  .dbar { height: 12px; background: #f1f5f9; border-radius: 999px; overflow: hidden; min-width: 60px; }
+  .dbar > div { height: 100%; background: #6366f1; border-radius: 999px; }
+  .dbar .low { background: #ef4444; } .dbar .mid { background: #f59e0b; } .dbar .high { background: #22c55e; }
+  .dbar .b0 { background: #ef4444; } .dbar .b1 { background: #f59e0b; } .dbar .b2 { background: #84cc16; } .dbar .b3 { background: #22c55e; }
+  .dash-table td { vertical-align: middle; }
+  .dash-table td .dbar { display: inline-block; width: 70px; margin-right: 8px; vertical-align: middle; }
+  .dash-table th button { font-weight: 800; color: #334155; cursor: pointer; }
+  .drill { display: inline-flex; align-items: center; color: #4338ca; font-weight: 700; cursor: pointer; text-align: left; }
+  .drill .ms { margin: 0; font-size: 1.1em; }
+  .rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .rank-grid { grid-template-columns: 1fr; } }
+  .rank { margin: 0; padding-left: 22px; } .rank li { margin: 4px 0; } .rank li span { margin-right: 8px; }
+  .qa { border-top: 1px solid var(--line); padding: 12px 0; }
+  .qa-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 6px; font-weight: 600; }
+  .qa-pct { font-size: 1.2rem; } .qa-pct.low { color: #dc2626; } .qa-pct.mid { color: #d97706; } .qa-pct.high { color: #16a34a; }
+  .brow.opt.ok span { color: #166534; font-weight: 800; } .brow.opt.ok .dbar > div { background: #22c55e; }
+  .brow.opt.bad span { color: #b91c1c; font-weight: 800; } .brow.opt.bad .dbar > div { background: #ef4444; }
+  .link-row { display: flex; gap: 8px; }
+  .qr { margin: 12px 0; } .qr img, .qr canvas { background: #fff; padding: 8px; border-radius: 12px; border: 1px solid var(--line); }
+  .st-done { color: #166534; font-weight: 700; } .st-pending { color: #b45309; font-weight: 700; }
+  .st-done .ms, .st-pending .ms { font-size: 1.1em; }
+
+  /* --- DIET ક્વિઝ મેકર --- */
+  .admin-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .admin-title { display: flex; align-items: center; font-size: 1.5rem; font-weight: 800; margin: 0; }
+  .admin-sub { display: flex; align-items: center; font-size: 1.15rem; font-weight: 800; margin: 0; }
+  .admin-title .ms, .admin-sub .ms { color: #4f46e5; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #c7d2fe; background: #fff; color: #4338ca; font-weight: 700; cursor: pointer; }
+  .chip.on { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .chip.on .ms { color: #fff; }
+  .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .admin-quiz { text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+  .admin-quiz:hover { border-color: #a5b4fc; box-shadow: 0 6px 18px rgba(79,70,229,.12); }
+  .aq-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .aq-top h2 { margin: 0; }
+  .aq-meta { display: flex; align-items: center; flex-wrap: wrap; font-size: .9rem; color: var(--muted); }
+  .aq-meta .ms { font-size: 1.1em; color: #6366f1; }
+  .status { font-size: .8rem; font-weight: 800; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .st-pub { background: #dcfce7; color: #166534; } .st-draft { background: #e2e8f0; color: #334155; } .st-closed { background: #fee2e2; color: #991b1b; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 10px 0; }
+  .form-grid label, .block-label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; color: #334155; font-size: .95rem; }
+  .block-label { margin: 10px 0; }
+  .form-grid .span2 { grid-column: span 2; }
+  @media (max-width: 480px) { .form-grid .span2 { grid-column: span 1; } }
+  .theme-official select.field { appearance: auto; }
+  .field.area { min-height: 90px; resize: vertical; line-height: 1.6; }
+  .row-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+  .row-actions.wrap { flex-wrap: wrap; justify-content: flex-start; }
+  .btn-ghost.danger { color: #b91c1c; border-color: #fecaca; }
+  .btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
+  .theme-official .btn-link { color: #4338ca; }
+  .back-link { justify-content: flex-start; width: auto; margin-bottom: 6px; }
+  .warn-light { display: flex; align-items: center; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: 10px 12px; margin: 12px 0 0; font-weight: 600; }
+  .warn-light .ms { color: #d97706; }
+  .admin-q { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+  .aq-num { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; background: #eef2ff; color: #4338ca; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .aq-text { font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
+  .aq-thumb { max-width: 160px; max-height: 100px; border-radius: 8px; margin: 6px 0; border: 1px solid var(--line); }
+  .aq-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: .9rem; }
+  .aq-opts span { background: #f1f5f9; border-radius: 8px; padding: 2px 8px; }
+  .aq-opts span.ok { background: #dcfce7; color: #166534; font-weight: 800; }
+  .aq-btns { display: flex; flex-direction: column; gap: 6px; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .icon-btn .ms { margin: 0; color: #4f46e5; }
+  .icon-btn.danger .ms { color: #dc2626; }
+  .icon-btn.light { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.3); }
+  .icon-btn.light .ms { color: #fff; }
+  .tag { display: inline-flex; align-items: center; font-size: .8rem; background: #fef3c7; color: #92400e; border-radius: 8px; padding: 1px 8px; margin: 4px 0; }
+  .img-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 6px 0 12px; }
+  .file-drop.small { padding: 10px 12px; }
+  .img-prev { position: relative; display: inline-block; }
+  .img-prev img { max-width: 200px; max-height: 140px; border-radius: 10px; border: 1px solid var(--line); display: block; }
+  .img-prev .icon-btn { position: absolute; top: 4px; right: 4px; width: 34px; height: 34px; }
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .opt-input { display: flex; align-items: center; gap: 8px; }
+  .opt-input input[type=radio] { width: 22px; height: 22px; accent-color: #16a34a; flex-shrink: 0; }
+  .theme-official .opt-letter { background: #eef2ff; color: #4338ca; }
+  .bulk-count { display: flex; align-items: center; font-weight: 700; margin: 12px 0 6px; }
+  .table-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+  .bad-row td { background: #fef2f2; color: #b91c1c; }
+  .old-import summary { display: flex; align-items: center; cursor: pointer; font-weight: 800; color: #334155; list-style: none; }
+  .old-import[open] summary { margin-bottom: 12px; }
+  .admin-spin { border-color: #e0e7ff; border-top-color: #4f46e5; }
+  .preview-shell { background: linear-gradient(135deg, #1e1b4b, #581c87 50%, #831843); border-radius: 22px; padding: 14px; color: #fff; margin-bottom: 14px; }
+  .preview-bar { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
+  .preview-shell .glass-card { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.28); }
+  .preview-shell .option { cursor: default; }
+  .preview-shell .btn-ghost { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.35); color: #fff; }
+</style>
+
+</head>
+<script>
+(function () {
+  // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
+  var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus"];
+  function call(fn, args, success, failure) {
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // text/plain: CORS preflight વગર
+      body: JSON.stringify({ fn: fn, args: args }),
+      redirect: 'follow'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (data) { if (success) success(data); }, function (err) { if (failure) failure(err); });
+  }
+  function runner(success, failure) {
+    var r = {
+      withSuccessHandler: function (fn) { return runner(fn, failure); },
+      withFailureHandler: function (fn) { return runner(success, fn); }
+    };
+    NAMES.forEach(function (name) {
+      r[name] = function () { call(name, Array.prototype.slice.call(arguments), success, failure); };
+    });
+    return r;
+  }
+  var changeHandler = null;
+  var hist = {
+    push: function (state, params, hash) { window.history.pushState(state, '', hash ? '#' + hash : location.href); },
+    replace: function (state, params, hash) { window.history.replaceState(state, '', hash ? '#' + hash : location.href); },
+    setChangeHandler: function (fn) { changeHandler = fn; }
+  };
+  window.addEventListener('popstate', function (e) { if (changeHandler) changeHandler({ state: e.state }); });
+  window.google = { script: { run: runner(null, null), history: hist } };
+})();
+</script>
+<body class="theme-student min-h-screen">
+
+  <!-- ટોચની પટ્ટી (લોગીન પછી) -->
+  <div id="topbar" class="topbar hidden">
+    <div class="topbar-inner">
+      <div class="flex items-center gap-3 min-w-0">
+        <span id="role-badge" class="role-badge"></span>
+        <div class="min-w-0">
+          <p id="top-name" class="top-name"></p>
+          <p id="top-scope" class="top-scope"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btn-change" type="button" class="btn-ghost hidden" aria-label="પાસવર્ડ બદલો">
+          <span class="ms">key</span><span class="hide-sm">પાસવર્ડ બદલો</span>
+        </button>
+        <button id="btn-logout" type="button" class="btn-ghost" aria-label="બહાર નીકળો">
+          <span class="ms">logout</span><span class="hide-sm">બહાર નીકળો</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- હેડર (દરેક સ્ક્રીન પર) -->
+  <header id="brand" class="brand">
+    <p class="brand-org">જિલ્લા શિક્ષણ અને તાલીમ ભવન – આણંદ</p>
+    <h1 class="brand-title">પરખ</h1>
+    <p class="brand-sub">ધોરણ 5 અને 8 – ઓનલાઇન પ્રેક્ટિસ</p>
+  </header>
+
+  <main class="page">
+
+    <!-- લોડિંગ -->
+    <section id="screen-loading" class="screen">
+      <div class="glass-card text-center py-10">
+        <div class="spinner"></div>
+        <p class="mt-4 text-lg">લોડ થઈ રહ્યું છે...</p>
+      </div>
+    </section>
+
+    <!-- લોગીન -->
+    <section id="screen-login" class="screen hidden">
+      <div class="glass-card glow">
+        <div id="login-info" class="info-card hidden"></div>
+
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="student" role="tab">
+            <span class="ms">face</span>વિદ્યાર્થી
+          </button>
+          <button type="button" class="tab" data-tab="official" role="tab">
+            <span class="ms">domain</span>શાળા / અધિકારી
+          </button>
+        </div>
+
+        <form id="form-student" class="space-y-5" novalidate>
+          <div>
+            <label class="field-label" for="st-dise"><span class="ms">school</span>શાળાનો ડાયસ કોડ</label>
+            <input id="st-dise" class="field" inputmode="numeric" autocomplete="off" maxlength="16"
+                   placeholder="11 અંકનો ડાયસ કોડ">
+          </div>
+          <div>
+            <span class="field-label"><span class="ms">menu_book</span>ધોરણ</span>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" class="std-btn" data-std="5">ધોરણ 5</button>
+              <button type="button" class="std-btn" data-std="8">ધોરણ 8</button>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" for="st-roll"><span class="ms">pin</span>રોલ નંબર</label>
+            <input id="st-roll" class="field" inputmode="numeric" autocomplete="off" maxlength="4"
+                   placeholder="તમારો રોલ નંબર">
+          </div>
+          <div class="error-card hidden" data-error></div>
+          <button type="submit" class="btn-primary">પ્રવેશ કરો<span class="ms">rocket_launch</span></button>
+        </form>
+
+        <form id="form-official" class="space-y-5 hidden" novalidate>
+          <div>
+            <label class="field-label" for="of-id"><span class="ms">badge</span>લોગીન ID</label>
+            <input id="of-id" class="field" autocomplete="username" autocapitalize="characters"
+                   placeholder="લોગીન ID લખો">
+            <p class="hint">શાળા: ડાયસ કોડ · CRC: CRC-કોડ · BRC: BRC-તાલુકો</p>
+          </div>
+          <div>
+            <label class="field-label" for="of-pw"><span class="ms">lock</span>પાસવર્ડ</label>
+            <div class="relative">
+              <input id="of-pw" type="password" class="field pr-14" autocomplete="current-password"
+                     placeholder="પાસવર્ડ લખો">
+              <button type="button" class="eye" data-eye="of-pw" aria-label="પાસવર્ડ બતાવો"><span class="ms">visibility</span></button>
+            </div>
+          </div>
+          <div class="error-card hidden" data-error></div>
+          <button type="submit" class="btn-primary"><span class="ms">login</span>લોગીન કરો</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- પાસવર્ડ બદલો -->
+    <section id="screen-change" class="screen hidden">
+      <div class="glass-card">
+        <h2 class="card-title"><span class="ms">key</span>નવો પાસવર્ડ બનાવો</h2>
+        <p id="change-note" class="hint mb-4">પહેલી વાર લોગીન કર્યું છે, એટલે તમારો પોતાનો પાસવર્ડ બનાવો.</p>
+        <form id="form-change" class="space-y-5" novalidate>
+          <div>
+            <label class="field-label" for="ch-old">હાલનો પાસવર્ડ</label>
+            <input id="ch-old" type="password" class="field" autocomplete="current-password">
+          </div>
+          <div>
+            <label class="field-label" for="ch-new">નવો પાસવર્ડ</label>
+            <input id="ch-new" type="password" class="field" autocomplete="new-password">
+            <p class="hint">ઓછામાં ઓછા 6 અક્ષર</p>
+          </div>
+          <div>
+            <label class="field-label" for="ch-new2">નવો પાસવર્ડ ફરી લખો</label>
+            <input id="ch-new2" type="password" class="field" autocomplete="new-password">
+          </div>
+          <div class="error-card hidden" data-error></div>
+          <button type="submit" class="btn-primary"><span class="ms">save</span>પાસવર્ડ સાચવો</button>
+          <button type="button" id="btn-change-cancel" class="btn-link hidden"><span class="ms">arrow_back</span>પાછા જાઓ</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- હોમ -->
+    <section id="screen-home" class="screen hidden">
+      <div id="app-home"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">© જિલ્લા શિક્ષણ અને તાલીમ ભવન – આણંદ</footer>
+
+  <script>
+    // Back બટન માટે: દરેક પેજ routes[view] નોંધાવે; leaveGuard = ચાલુ ક્વિઝ છોડતાં પહેલાં પૂછવા.
+    var routes = {};
+    var leaveGuard = null;
+  </script>
+  <script>
+  // પરખ – આણંદ : વિદ્યાર્થીની ક્વિઝ સ્ક્રીનો (યાદી → પ્રશ્નો → તપાસ → પરિણામ)
+  var PENDING_KEY = 'parakh_pending';
+  var SUBJECT_ICONS = { 'ગણિત': 'calculate', 'વિજ્ઞાન': 'science', 'પર્યાવરણ': 'eco', 'ભાષા': 'translate',
+    'ભાષાઓ': 'translate', 'સામાજિક વિજ્ઞાન': 'public' };
+  var quizState = null;
+
+  function ms(name, extra) { return '<span class="ms' + (extra ? ' ' + extra : '') + '">' + name + '</span>'; }
+
+  function newAttemptId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    var s = '';
+    for (var i = 0; i < 32; i++) s += Math.floor(Math.random() * 16).toString(16);
+    return s;
+  }
+
+  function readPending() {
+    try {
+      var p = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
+      return p && state.session && p.studentId === state.session.id ? p : null;
+    } catch (e) { return null; }
+  }
+  function writePending(p) { try { localStorage.setItem(PENDING_KEY, JSON.stringify(p)); } catch (e) {} }
+  function clearPending() { try { localStorage.removeItem(PENDING_KEY); } catch (e) {} }
+
+  function home() { return $('app-home'); }
+
+  // Back બટન: ક્વિઝના પ્રશ્ન → આગલો પ્રશ્ન → … → યાદી. ચાલુ ક્વિઝ છોડતાં પહેલાં પૂછો.
+  function quizActive() { return !!(quizState && !quizState.result); }
+  leaveGuard = function () {
+    var answered = quizActive() && quizState.answers.some(function (a) { return a !== null; });
+    if (answered && !window.confirm('ક્વિઝ અધૂરી છે. છોડશો તો જવાબો સચવાશે નહીં. છોડવી છે?')) {
+      navPush('quiz', { index: quizState.index });
+      return false;
+    }
+    quizState = null;
+    return true;
+  };
+  routes.quiz = function (data) {
+    if (!quizActive()) { navReplace('home'); renderStudentHome(); return; }
+    quizState.index = Math.min(Math.max(Number(data && data.index) || 0, 0), quizState.questions.length - 1);
+    renderQuestion();
+  };
+  routes.review = function () {
+    if (!quizActive()) { navReplace('home'); renderStudentHome(); return; }
+    renderReview();
+  };
+
+  function loadingCard(text) {
+    return '<div class="glass-card text-center py-10"><div class="spinner"></div><p class="mt-4">' + text + '</p></div>';
+  }
+
+  // --- યાદી ---
+
+  function renderStudentHome() {
+    quizState = null;
+    home().innerHTML = loadingCard('ક્વિઝ લોડ થઈ રહી છે...');
+    callServer('apiListQuizzes', getToken()).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { home().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      var html = '';
+      var pending = readPending();
+      if (pending) {
+        html += '<div class="pending-card">' + ms('cloud_off') +
+          '<div class="grow"><b>' + escapeHtml(pending.title) + '</b> નું પરિણામ હજુ મોકલાયું નથી.</div>' +
+          '<button type="button" class="btn-small" id="btn-resend">' + ms('refresh') + 'ફરી મોકલો</button></div>';
+      }
+      if (!r.quizzes.length) {
+        html += '<div class="glass-card welcome">' + '<p>' + ms('event_busy', 'icon-hero') + '</p>' +
+          '<h2>નમસ્તે, ' + escapeHtml(state.session.name) + '!</h2><p>હાલ તમારા ધોરણ માટે કોઈ ક્વિઝ ચાલુ નથી.</p></div>';
+      }
+      var groups = {};
+      r.quizzes.forEach(function (q) { (groups[q.subject] = groups[q.subject] || []).push(q); });
+      Object.keys(groups).forEach(function (subject) {
+        html += '<h3 class="subject-title">' + ms(SUBJECT_ICONS[subject] || 'menu_book') + escapeHtml(subject) + '</h3>' +
+          '<div class="quiz-grid">';
+        groups[subject].forEach(function (q) {
+          var done = q.attempts > 0;
+          html += '<button type="button" class="quiz-card' + (done ? ' done' : '') + '" data-quiz="' + escapeHtml(q.id) + '">' +
+            '<span class="quiz-set">સેટ ' + q.setNo + '</span>' +
+            (done
+              ? '<span class="quiz-status">' + ms('check_circle') + 'પહેલો: ' + q.first + '/' + q.total + ' · શ્રેષ્ઠ: ' + q.best + '/' + q.total + '</span>'
+              : '<span class="quiz-status">' + ms('play_circle') + 'શરૂ કરો</span>') +
+            '</button>';
+        });
+        html += '</div>';
+      });
+      home().innerHTML = html;
+      home().querySelectorAll('[data-quiz]').forEach(function (b) {
+        b.addEventListener('click', function () { startQuiz(b.getAttribute('data-quiz')); });
+      });
+      if (pending) $('btn-resend').addEventListener('click', resendPending);
+    });
+  }
+
+  // --- ક્વિઝ ---
+
+  function startQuiz(quizId, pending) {
+    home().innerHTML = loadingCard('પ્રશ્નો લોડ થઈ રહ્યા છે...');
+    callServer('apiGetQuiz', getToken(), quizId).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { home().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>' + backButton(); bindBack(); return; }
+      quizState = {
+        quiz: r.quiz, questions: r.questions, index: 0,
+        answers: pending ? pending.answers : r.questions.map(function () { return null; }),
+        attemptId: pending ? pending.attemptId : newAttemptId()
+      };
+      if (pending) { submitQuiz(); return; }
+      navPush('quiz', { index: 0 });
+      renderQuestion();
+    });
+  }
+
+  function progressBar(done, total) {
+    return '<div class="progress"><div style="width:' + Math.round(100 * done / total) + '%"></div></div>';
+  }
+
+  function renderQuestion() {
+    var s = quizState;
+    var q = s.questions[s.index];
+    var last = s.index === s.questions.length - 1;
+    var html = '<div class="glass-card quiz-box">' +
+      '<div class="quiz-head"><span>' + escapeHtml(s.quiz.title) + '</span><span class="pill">પ્રશ્ન ' + (s.index + 1) + '/' + s.questions.length + '</span></div>' +
+      progressBar(s.index + 1, s.questions.length) +
+      '<div class="q-html">' + q.html + '</div><div class="options">';
+    q.options.forEach(function (opt, i) {
+      html += '<button type="button" class="option' + (s.answers[s.index] === i ? ' chosen' : '') + '" data-opt="' + i + '">' +
+        '<span class="opt-letter">' + 'ABCD'.charAt(i) + '</span><span>' + escapeHtml(opt) + '</span></button>';
+    });
+    html += '</div><div class="quiz-nav">' +
+      '<button type="button" class="btn-ghost" id="q-prev"' + (s.index === 0 ? ' disabled' : '') + '>' + ms('chevron_left') + 'પાછળ</button>' +
+      (last
+        ? '<button type="button" class="btn-primary btn-inline" id="q-review">' + ms('fact_check') + 'જવાબો તપાસો</button>'
+        : '<button type="button" class="btn-primary btn-inline" id="q-next">આગળ' + ms('chevron_right') + '</button>') +
+      '</div></div>';
+    home().innerHTML = html;
+    home().querySelectorAll('[data-opt]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        s.answers[s.index] = Number(b.getAttribute('data-opt'));
+        home().querySelectorAll('[data-opt]').forEach(function (x) { x.classList.toggle('chosen', x === b); });
+      });
+    });
+    $('q-prev').addEventListener('click', function () { s.index--; navPush('quiz', { index: s.index }); renderQuestion(); });
+    if (last) $('q-review').addEventListener('click', function () { navPush('review'); renderReview(); });
+    else $('q-next').addEventListener('click', function () { s.index++; navPush('quiz', { index: s.index }); renderQuestion(); });
+    window.scrollTo(0, 0);
+  }
+
+  function renderReview() {
+    var s = quizState;
+    var left = s.answers.filter(function (a) { return a === null; }).length;
+    var html = '<div class="glass-card quiz-box"><h2 class="card-title">' + ms('fact_check') + 'જવાબો તપાસો</h2>' +
+      '<div class="review-grid">';
+    s.answers.forEach(function (a, i) {
+      html += '<button type="button" class="review-cell' + (a === null ? ' empty' : '') + '" data-go="' + i + '">' +
+        (i + 1) + '<small>' + (a === null ? '—' : 'ABCD'.charAt(a)) + '</small></button>';
+    });
+    html += '</div>' +
+      (left ? '<p class="warn">' + ms('warning') + left + ' પ્રશ્નોના જવાબ બાકી છે</p>' : '<p class="okline">' + ms('task_alt') + 'બધા પ્રશ્નોના જવાબ આપ્યા છે</p>') +
+      '<div class="error-card hidden" id="submit-error"></div>' +
+      '<button type="button" class="btn-primary" id="q-submit">' + ms('send') + 'સબમિટ કરો</button>' +
+      '<button type="button" class="btn-link" id="q-back">' + ms('arrow_back') + 'પ્રશ્નો પર પાછા જાઓ</button></div>';
+    home().innerHTML = html;
+    home().querySelectorAll('[data-go]').forEach(function (b) {
+      b.addEventListener('click', function () { s.index = Number(b.getAttribute('data-go')); navPush('quiz', { index: s.index }); renderQuestion(); });
+    });
+    $('q-submit').addEventListener('click', submitQuiz);
+    $('q-back').addEventListener('click', function () { navPush('quiz', { index: s.index }); renderQuestion(); });
+  }
+
+  function submitQuiz() {
+    var s = quizState;
+    // નેટ તૂટે તો પણ જવાબો ફોનમાં રહે; એ જ attemptId થી ફરી મોકલતાં બીજું પરિણામ બનતું નથી.
+    // પ્રશ્નો પણ સાચવો: ક્વિઝ પછી બંધ થઈ જાય તો પણ ફરી મોકલી પરિણામ બતાવી શકાય.
+    writePending({ studentId: state.session.id, quizId: s.quiz.id, title: s.quiz.title, attemptId: s.attemptId,
+      answers: s.answers, quiz: s.quiz, questions: s.questions });
+    var btn = $('q-submit');
+    if (btn) { btn.disabled = true; btn.innerHTML = ms('progress_activity', 'spin') + 'પરિણામ સેવ થઈ રહ્યું છે...'; }
+    else home().innerHTML = loadingCard('પરિણામ સેવ થઈ રહ્યું છે...');
+    callServer('apiSubmitQuiz', getToken(), s.quiz.id, s.attemptId, s.answers).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok && r.code === 'QUIZ_UNAVAILABLE') {
+        // હવે ક્યારેય સ્વીકારાશે નહીં (ક્વિઝ બંધ/બદલાઈ): જૂના જવાબો રાખવાનો અર્થ નથી.
+        clearPending();
+        home().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>' + backButton();
+        bindBack();
+        return;
+      }
+      if (!r.ok) { showSubmitError(r.message); return; }
+      clearPending();
+      s.result = r.result;
+      // પરિણામ પછી Back = ક્વિઝની યાદી (ફરી પ્રશ્નો પર નહીં).
+      navReplace('home');
+      renderResult(r.result);
+    });
+  }
+
+  function showSubmitError(message) {
+    if (!$('q-submit')) renderReview();
+    var box = $('submit-error');
+    box.innerHTML = ms('cloud_off') + 'પરિણામ મોકલાયું નથી. ' + escapeHtml(message);
+    box.classList.remove('hidden');
+    var btn = $('q-submit');
+    btn.disabled = false;
+    btn.innerHTML = ms('refresh') + 'ફરી મોકલો';
+  }
+
+  function resendPending() {
+    var p = readPending();
+    if (!p) return;
+    if (!p.questions) { startQuiz(p.quizId, p); return; }
+    quizState = { quiz: p.quiz, questions: p.questions, index: 0, answers: p.answers, attemptId: p.attemptId };
+    submitQuiz();
+  }
+
+  function optionText(q, i) {
+    return i === null || i === undefined ? 'જવાબ આપ્યો નથી' : 'ABCD'.charAt(i) + '. ' + escapeHtml(q.options[i]);
+  }
+
+  function renderResult(result) {
+    var s = quizState;
+    var html = '<div class="glass-card result-head">' + ms('emoji_events', 'icon-hero') +
+      '<h2>તમારો સ્કોર ' + result.score + ' / ' + result.total + '</h2>' +
+      '<p>' + escapeHtml(s.quiz.title) + ' · પ્રયત્ન ' + result.attempt + '</p></div>';
+    result.review.forEach(function (rv, i) {
+      var q = s.questions[i];
+      html += '<div class="review-card ' + (rv.ok ? 'ok' : 'bad') + '">' +
+        '<div class="review-mark">' + ms(rv.ok ? 'check_circle' : 'cancel') + 'પ્રશ્ન ' + rv.n + '</div>' +
+        '<div class="q-html">' + q.html + '</div>' +
+        '<p>તમારો જવાબ: <b>' + optionText(q, rv.chosen) + '</b></p>' +
+        (rv.ok ? '' : '<p>સાચો જવાબ: <b>' + optionText(q, rv.correct) + '</b></p>' +
+          (rv.explanation.length ? '<div class="explain">' + ms('lightbulb') + '<div><b>સમજૂતી</b><ul>' +
+            rv.explanation.map(function (e) { return '<li>' + escapeHtml(e) + '</li>'; }).join('') + '</ul></div></div>' : '')) +
+        '</div>';
+    });
+    html += '<button type="button" class="btn-primary" id="q-home">' + ms('home') + 'ક્વિઝની યાદી</button>';
+    home().innerHTML = html;
+    $('q-home').addEventListener('click', renderStudentHome);
+    window.scrollTo(0, 0);
+  }
+
+  function backButton() {
+    return '<button type="button" class="btn-link" id="q-home">' + ms('arrow_back') + 'ક્વિઝની યાદી</button>';
+  }
+  function bindBack() { $('q-home').addEventListener('click', renderStudentHome); }
+</script>
+
+  <script>
+  // પરખ – આણંદ : DIET હોમ — જૂની e NAS HTML ફાઇલમાંથી પ્રશ્નો આયાત
+  var BANK_RE = /const questionBank = (\{[\s\S]*?\});\s*\n/;
+  var importState = { std: null, bank: null };
+
+  function dietMs(name) { return '<span class="ms">' + name + '</span>'; }
+
+  // ફાઇલના લખાણમાંથી {વિષય: {સેટ: [પ્રશ્નો]}} કાઢે; ન મળે તો null.
+  function parseBank(text) {
+    var m = String(text).match(BANK_RE);
+    if (!m) return null;
+    try {
+      var bank = JSON.parse(m[1]);
+      return bank && typeof bank === 'object' && Object.keys(bank).length ? bank : null;
+    } catch (e) { return null; }
+  }
+
+  var IMPORT_SUBJECTS = { 5: ['ગણિત', 'પર્યાવરણ', 'ભાષાઓ'], 8: ['ગણિત', 'વિજ્ઞાન', 'ભાષા', 'સામાજિક વિજ્ઞાન'] };
+
+  // ફાઇલના જે વિષય પસંદ કરેલા ધોરણમાં નથી (દા.ત. ધો. 8 ની ફાઇલ અને ધોરણ 5 પસંદ).
+  function subjectsNotInStd(bank, std) {
+    var allowed = IMPORT_SUBJECTS[std] || [];
+    return Object.keys(bank).filter(function (s) { return allowed.indexOf(s) === -1; });
+  }
+
+  function bankJobs(bank) {
+    var jobs = [];
+    Object.keys(bank).forEach(function (subject) {
+      Object.keys(bank[subject]).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (setNo) {
+        jobs.push({ subject: subject, setNo: Number(setNo), questions: bank[subject][setNo] });
+      });
+    });
+    return jobs;
+  }
+
+  // DIET હોમના નીચેના "જૂની HTML આયાત" કાર્ડમાં દોરે છે (AdminApp.html બોલાવે છે).
+  function renderImportCard(container) {
+    importState = { std: null, bank: null };
+    container.innerHTML =
+        '<p class="hint mb-4">જૂની e NAS પ્રેક્ટિસ HTML ફાઇલ પસંદ કરો. દરેક સેટ એક ક્વિઝ બનશે અને ચિત્રો Drive માં સચવાશે. એ જ ફાઇલ ફરી આયાત કરો તો કંઈ બે વાર નહીં ઉમેરાય.</p>' +
+        '<div class="space-y-4">' +
+          '<div><span class="field-label">' + dietMs('menu_book') + 'ધોરણ</span>' +
+            '<div class="seg"><button type="button" data-istd="5">ધોરણ 5</button><button type="button" data-istd="8">ધોરણ 8</button></div></div>' +
+          '<label class="file-drop">' + dietMs('folder_open') + '<span id="file-name">HTML ફાઇલ પસંદ કરો</span>' +
+            '<input type="file" id="bank-file" accept=".html,.htm,text/html"></label>' +
+          '<div id="bank-summary"></div>' +
+          '<div class="error-card hidden" id="import-error"></div>' +
+          '<button type="button" class="btn-primary" id="btn-import" disabled>' + dietMs('cloud_upload') + 'આયાત શરૂ કરો</button>' +
+          '<div id="import-progress"></div>' +
+        '</div>';
+
+    document.querySelectorAll('[data-istd]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        importState.std = Number(b.getAttribute('data-istd'));
+        document.querySelectorAll('[data-istd]').forEach(function (x) { x.classList.toggle('on', x === b); });
+        refreshImportButton();
+      });
+    });
+    $('bank-file').addEventListener('change', onBankFile);
+    $('btn-import').addEventListener('click', runImport);
+  }
+
+  function importError(message) {
+    var box = $('import-error');
+    box.textContent = message || '';
+    box.classList.toggle('hidden', !message);
+  }
+
+  function refreshImportButton() {
+    var wrong = importState.std && importState.bank ? subjectsNotInStd(importState.bank, importState.std) : [];
+    importError(wrong.length ? 'આ ફાઇલમાં ધોરણ ' + importState.std + ' માટે ન હોય એવા વિષય છે (' + wrong.join(', ') +
+      '). ધોરણ બરાબર પસંદ કરો.' : '');
+    $('btn-import').disabled = !(importState.std && importState.bank) || wrong.length > 0;
+  }
+
+  function onBankFile(e) {
+    var file = e.target.files[0];
+    importState.bank = null;
+    $('bank-summary').innerHTML = '';
+    importError('');
+    refreshImportButton();
+    if (!file) return;
+    $('file-name').textContent = file.name;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var bank = parseBank(reader.result);
+      if (!bank) { importError('આ ફાઇલમાં પ્રશ્નબેંક મળી નહીં.'); return; }
+      importState.bank = bank;
+      var rows = Object.keys(bank).map(function (subject) {
+        var sets = Object.keys(bank[subject]);
+        var qs = sets.reduce(function (n, k) { return n + bank[subject][k].length; }, 0);
+        return '<tr><td>' + escapeHtml(subject) + '</td><td>' + sets.length + '</td><td>' + qs + '</td></tr>';
+      }).join('');
+      $('bank-summary').innerHTML = '<table class="summary-table"><thead><tr><th>વિષય</th><th>સેટ</th><th>પ્રશ્નો</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      refreshImportButton();
+    };
+    reader.onerror = function () { importError('ફાઇલ વાંચી શકાઈ નહીં.'); };
+    reader.readAsText(file);
+  }
+
+  function runImport() {
+    var jobs = bankJobs(importState.bank);
+    var std = importState.std;
+    var btn = $('btn-import');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ms spin">progress_activity</span>આયાત ચાલુ છે...';
+    $('import-progress').innerHTML =
+      '<div class="import-live" id="import-live"><span class="ms spin">progress_activity</span>' +
+        '<div class="grow"><b id="import-now">શરૂ થઈ રહ્યું છે...</b><small id="import-eta"></small></div>' +
+        '<span class="import-pct" id="import-pct">0%</span></div>' +
+      '<p class="import-warn">' + dietMs('warning') + 'આયાત પૂરી થાય ત્યાં સુધી આ પેજ બંધ ન કરો.</p>' +
+      '<div class="progress"><div id="import-bar" style="width:0"></div></div>' +
+      '<p id="import-count" class="hint"></p><div class="import-log" id="import-log"></div>';
+    var added = 0, skipped = 0, failed = 0, images = 0;
+    $('import-live').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var startedAt = Date.now();
+    // પેજ બંધ કરવા જાય તો browser ચેતવણી આપે.
+    var guard = function (e) { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', guard);
+
+    function log(cls, icon, text) {
+      var line = document.createElement('div');
+      line.className = cls;
+      line.innerHTML = dietMs(icon) + escapeHtml(text);
+      $('import-log').appendChild(line);
+      $('import-log').scrollTop = 1e9;
+    }
+
+    function next(i) {
+      var pct = Math.round(100 * i / jobs.length);
+      $('import-bar').style.width = pct + '%';
+      $('import-pct').textContent = pct + '%';
+      $('import-count').textContent = i + ' / ' + jobs.length + ' સેટ પૂરા · ' + added + ' ઉમેર્યા · ' + skipped + ' પહેલેથી · ' + failed + ' ભૂલ';
+      if (i > 0) {
+        var left = Math.round((Date.now() - startedAt) / i * (jobs.length - i) / 1000);
+        $('import-eta').textContent = left > 0 ? 'લગભગ ' + (left >= 60 ? Math.ceil(left / 60) + ' મિનિટ' : left + ' સેકન્ડ') + ' બાકી' : '';
+      }
+      if (i === jobs.length) {
+        window.removeEventListener('beforeunload', guard);
+        $('import-live').className = 'import-live done';
+        $('import-live').innerHTML = dietMs('task_alt') + '<div class="grow"><b>આયાત પૂર્ણ</b><small>' +
+          added + ' નવી ક્વિઝ · ' + skipped + ' પહેલેથી · ' + failed + ' ભૂલ · ' + images + ' ચિત્રો</small></div>';
+        document.querySelector('.import-warn').remove();
+        btn.innerHTML = dietMs('task_alt') + 'આયાત પૂર્ણ';
+        log('ok', 'summarize', 'કુલ: ' + added + ' નવી ક્વિઝ, ' + skipped + ' પહેલેથી હતી, ' + failed + ' ભૂલ, ' + images + ' ચિત્રો.');
+        return;
+      }
+      var job = jobs[i];
+      var label = job.subject + ' – સેટ ' + job.setNo;
+      $('import-now').textContent = (i + 1) + ' / ' + jobs.length + ' : ' + label + ' આયાત થઈ રહ્યું છે...';
+      callServer('apiImportSet', getToken(), std, job.subject, job.setNo, job.questions).then(function (r) {
+        if (handleExpired(r)) { window.removeEventListener('beforeunload', guard); return; }
+        if (r.ok && r.status === 'added') { added++; images += r.images || 0; log('ok', 'check_circle', r.quizId + ' · ' + label + ' ઉમેર્યું'); }
+        else if (r.ok) {
+          skipped++;
+          log(r.repaired ? 'ok' : 'skip', r.repaired ? 'build' : 'remove_done', r.quizId + ' · ' + label + ' પહેલેથી છે' +
+            (r.repaired ? ' (' + r.repaired + ' ખાના સુધાર્યાં)' : ''));
+        }
+        else { failed++; log('err', 'error', label + ': ' + r.message); }
+        next(i + 1);
+      });
+    }
+    next(0);
+  }
+</script>
+
+  <script>
+  // પરખ – આણંદ : Paste/Excel માંથી પ્રશ્નો વાંચવાના શુદ્ધ ફંક્શન (browser અને Node ટેસ્ટ બંનેમાં ચાલે)
+  // સર્વર (validateQuestionInput) અંતિમ તપાસ કરે છે; અહીં તો પૂર્વાવલોકનમાં ભૂલ બતાવવા પૂરતું.
+  var BULK_HEADERS = ['પ્રશ્ન', 'વિકલ્પ A', 'વિકલ્પ B', 'વિકલ્પ C', 'વિકલ્પ D', 'સાચો જવાબ', 'સમજૂતી', 'LO કોડ'];
+  var BULK_LETTERS = ['A', 'B', 'C', 'D'];
+  var BULK_GU_LETTERS = ['ક', 'ખ', 'ગ', 'ઘ'];
+
+  // Excel/Google Sheets નું clipboard: TAB થી કૉલમ, નવી લીટીથી હરોળ, "..." માં ખાનાની અંદરની લીટી/TAB.
+  function parseTsv(text) {
+    var rows = [];
+    var row = [];
+    var cell = '';
+    var quoted = false;
+    var s = String(text || '');
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      if (quoted) {
+        if (ch === '"' && s.charAt(i + 1) === '"') { cell += '"'; i++; }
+        else if (ch === '"') quoted = false;
+        else cell += ch;
+      } else if (ch === '"' && cell === '') {
+        quoted = true;
+      } else if (ch === '\t') {
+        row.push(cell); cell = '';
+      } else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && s.charAt(i + 1) === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else {
+        cell += ch;
+      }
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+
+  function bulkCorrect(value) {
+    var text = String(value || '').trim();
+    var i = BULK_LETTERS.indexOf(text.toUpperCase());
+    if (i !== -1) return i;
+    i = BULK_GU_LETTERS.indexOf(text);
+    if (i !== -1) return i;
+    return /^[1-4]$/.test(text) ? Number(text) - 1 : -1;
+  }
+
+  function bulkProblem(q) {
+    if (!q.text) return 'પ્રશ્ન ખાલી છે.';
+    for (var i = 0; i < 4; i++) if (!q.options[i]) return 'વિકલ્પ ' + BULK_LETTERS[i] + ' ખાલી છે.';
+    if (q.correct < 0) return 'સાચો જવાબ A, B, C કે D હોવો જોઈએ.';
+    return null;
+  }
+
+  // row = paste/Excel ની હરોળ નંબર (1 થી), જેથી DIET તે જ લીટી સુધારી શકે.
+  function bulkRowsToQuestions(rows) {
+    var questions = [];
+    var errors = [];
+    rows.forEach(function (cells, idx) {
+      var c = cells.map(function (x) { return String(x === null || x === undefined ? '' : x).trim(); });
+      if (c.every(function (x) { return x === ''; })) return;
+      if (idx === 0 && c[0] === BULK_HEADERS[0]) return;
+      var q = {
+        row: idx + 1,
+        text: c[0] || '',
+        options: [c[1] || '', c[2] || '', c[3] || '', c[4] || ''],
+        correct: bulkCorrect(c[5]),
+        explanation: String(c[6] || '').split(/\r?\n/).map(function (e) { return e.trim(); }).filter(function (e) { return e; }),
+        lo: c[7] || ''
+      };
+      var problem = bulkProblem(q);
+      if (problem) errors.push({ row: q.row, message: problem });
+      else questions.push(q);
+    });
+    return { questions: questions, errors: errors };
+  }
+
+  function xlsxRowsFromSheet(sheetRows) {
+    return (sheetRows || []).map(function (r) {
+      return (r || []).map(function (x) { return String(x === null || x === undefined ? '' : x).trim(); });
+    });
+  }
+</script>
+
+  <script>
+  // પરખ – આણંદ : DIET ક્વિઝ મેકર (યાદી → નવી ક્વિઝ → એડિટર → પ્રશ્ન ફોર્મ / Paste / Excel → પૂર્વાવલોકન)
+  var SUBJECTS = { 5: ['ગણિત', 'પર્યાવરણ', 'ભાષાઓ'], 8: ['ગણિત', 'વિજ્ઞાન', 'ભાષા', 'સામાજિક વિજ્ઞાન'] };
+  var XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  var STATUS_CLASS = { 'પ્રકાશિત': 'st-pub', 'ડ્રાફ્ટ': 'st-draft', 'બંધ': 'st-closed' };
+  var MAX_IMAGE_WIDTH = 1200;
+  var admin = { filter: 'all', quizzes: [], current: null, image: null, bulk: null };
+
+  function am(name, extra) { return '<span class="ms' + (extra ? ' ' + extra : '') + '">' + name + '</span>'; }
+  function root() { return $('tab-body') || $('app-home'); }
+  function busy(text) { return '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">' + text + '</p></div>'; }
+  function statusBadge(s) { return '<span class="status ' + (STATUS_CLASS[s] || '') + '">' + escapeHtml(s) + '</span>'; }
+
+  function adminCall(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return callServer.apply(null, [fn, getToken()].concat(args)).then(function (r) {
+      if (handleExpired(r)) return null;
+      return r;
+    });
+  }
+
+  function showAdminError(id, message) {
+    var box = $(id);
+    if (!box) return;
+    box.textContent = message || '';
+    box.classList.toggle('hidden', !message);
+  }
+
+  // --- યાદી ---
+
+  function renderDietHome() {
+    admin.current = null;
+    root().innerHTML =
+      '<div class="admin-head"><h2 class="admin-title">' + am('quiz') + 'ક્વિઝ</h2>' +
+        '<button type="button" class="btn-primary btn-inline" id="btn-new-quiz">' + am('add') + 'નવી ક્વિઝ</button></div>' +
+      '<div class="chips">' + ['all', '5', '8'].map(function (f) {
+        return '<button type="button" class="chip' + (admin.filter === f ? ' on' : '') + '" data-filter="' + f + '">' +
+          (f === 'all' ? 'બધા' : 'ધોરણ ' + f) + '</button>';
+      }).join('') + '</div>' +
+      '<div id="quiz-list">' + busy('ક્વિઝ લોડ થઈ રહી છે...') + '</div>' +
+      '<details class="admin-card old-import"><summary>' + am('history') + 'જૂની HTML ફાઇલમાંથી આયાત</summary><div id="import-slot"></div></details>';
+    $('btn-new-quiz').addEventListener('click', renderNewQuizForm);
+    root().querySelectorAll('[data-filter]').forEach(function (b) {
+      b.addEventListener('click', function () { admin.filter = b.getAttribute('data-filter'); renderDietHome(); });
+    });
+    renderImportCard($('import-slot'));
+    adminCall('apiAdminListQuizzes').then(function (r) {
+      if (!r) return;
+      if (!r.ok) { $('quiz-list').innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      admin.quizzes = r.quizzes;
+      renderQuizList();
+    });
+  }
+
+  function renderQuizList() {
+    var list = admin.quizzes.filter(function (q) { return admin.filter === 'all' || String(q.std) === admin.filter; });
+    if (!list.length) {
+      $('quiz-list').innerHTML = '<div class="admin-card text-center">' + am('inventory_2', 'icon-hero') + '<p>હજુ કોઈ ક્વિઝ નથી. "નવી ક્વિઝ" દબાવો.</p></div>';
+      return;
+    }
+    $('quiz-list').innerHTML = '<div class="admin-grid">' + list.map(function (q) {
+      return '<button type="button" class="admin-quiz" data-open="' + escapeHtml(q.id) + '">' +
+        '<div class="aq-top"><b>' + escapeHtml(q.title) + '</b>' + statusBadge(q.status) + '</div>' +
+        '<div class="aq-meta">ધોરણ ' + q.std + ' · ' + escapeHtml(q.subject) + ' · ' + escapeHtml(q.id) + '</div>' +
+        '<div class="aq-meta">' + am('quiz') + q.questions + ' પ્રશ્નો &nbsp; ' + am('groups') + q.attempts + ' વાર અપાઈ</div>' +
+        ((q.start || q.end) ? '<div class="aq-meta">' + am('event') + escapeHtml(q.start || '…') + ' થી ' + escapeHtml(q.end || '…') + '</div>' : '') +
+        '</button>';
+    }).join('') + '</div>';
+    $('quiz-list').querySelectorAll('[data-open]').forEach(function (b) {
+      b.addEventListener('click', function () { openEditor(b.getAttribute('data-open')); });
+    });
+  }
+
+  // --- નવી ક્વિઝ ---
+
+  function renderNewQuizForm(fromHistory) {
+    if (fromHistory !== true) navPush('newquiz');
+    var std = admin.filter === '5' ? 5 : 8;
+    root().innerHTML =
+      '<div class="admin-card"><h2>' + am('add_circle') + 'નવી ક્વિઝ</h2>' +
+        '<div class="form-grid">' +
+          '<label>ધોરણ<select id="nq-std" class="field"><option value="5">ધોરણ 5</option><option value="8">ધોરણ 8</option></select></label>' +
+          '<label>વિષય<select id="nq-subject" class="field"></select></label>' +
+          '<label>સેટ નંબર<input id="nq-set" class="field" inputmode="numeric" placeholder="આપોઆપ"></label>' +
+          '<label class="span2">શીર્ષક<input id="nq-title" class="field"></label>' +
+          '<label>શરૂ તારીખ<input id="nq-start" type="date" class="field"></label>' +
+          '<label>અંતિમ તારીખ<input id="nq-end" type="date" class="field"></label>' +
+        '</div>' +
+        '<p class="hint">તારીખ ખાલી રાખશો તો પ્રકાશિત કર્યા પછી હંમેશાં ચાલુ રહેશે.</p>' +
+        '<div class="error-card hidden" id="nq-error"></div>' +
+        '<div class="row-actions"><button type="button" class="btn-ghost" id="nq-cancel">' + am('arrow_back') + 'પાછા</button>' +
+        '<button type="button" class="btn-primary btn-inline" id="nq-save">' + am('save') + 'બનાવો</button></div>' +
+      '</div>';
+    $('nq-std').value = String(std);
+    var titleTouched = false;
+    function nextSet(subject) {
+      return admin.quizzes.filter(function (q) { return q.std === Number($('nq-std').value) && q.subject === subject; })
+        .reduce(function (m, q) { return Math.max(m, q.setNo); }, 0) + 1;
+    }
+    function refresh() {
+      var subjects = SUBJECTS[$('nq-std').value];
+      var current = $('nq-subject').value;
+      $('nq-subject').innerHTML = subjects.map(function (s) { return '<option>' + s + '</option>'; }).join('');
+      if (subjects.indexOf(current) !== -1) $('nq-subject').value = current;
+      var setNo = $('nq-set').value.trim() || nextSet($('nq-subject').value);
+      if (!titleTouched) $('nq-title').value = $('nq-subject').value + ' – સેટ ' + setNo;
+    }
+    $('nq-std').addEventListener('change', refresh);
+    $('nq-subject').addEventListener('change', refresh);
+    $('nq-set').addEventListener('input', refresh);
+    $('nq-title').addEventListener('input', function () { titleTouched = true; });
+    $('nq-cancel').addEventListener('click', renderDietHome);
+    $('nq-save').addEventListener('click', function () {
+      var btn = $('nq-save');
+      btn.disabled = true;
+      adminCall('apiCreateQuiz', {
+        std: Number($('nq-std').value), subject: $('nq-subject').value, setNo: $('nq-set').value.trim(),
+        title: $('nq-title').value, start: $('nq-start').value, end: $('nq-end').value
+      }).then(function (r) {
+        if (!r) return;
+        btn.disabled = false;
+        if (!r.ok) { showAdminError('nq-error', r.message); return; }
+        navReplace('editor', { id: r.quiz.id });
+        openEditor(r.quiz.id, true);
+      });
+    });
+    refresh();
+  }
+
+  // --- એડિટર ---
+
+  // Back બટન: એડિટર / નવી ક્વિઝ ફોર્મ → યાદી.
+  routes.editor = function (data) { if (data && data.id) openEditor(data.id, true); else renderDietHome(); };
+  routes.newquiz = function () { renderNewQuizForm(true); };
+
+  function openEditor(quizId, fromHistory) {
+    if (!fromHistory) navPush('editor', { id: quizId });
+    root().innerHTML = busy('ક્વિઝ ખૂલી રહી છે...');
+    adminCall('apiGetQuizForEdit', quizId).then(function (r) {
+      if (!r) return;
+      if (!r.ok) { root().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      admin.current = { quiz: r.quiz, questions: r.questions, attempts: r.attempts, canAddRemove: r.canAddRemove, lockReason: r.lockReason };
+      renderEditor();
+    });
+  }
+
+  function renderEditor() {
+    var c = admin.current;
+    var q = c.quiz;
+    var actions = [];
+    if (q.status !== 'પ્રકાશિત') actions.push('<button type="button" class="btn-primary btn-inline" data-status="પ્રકાશિત">' + am('publish') + 'પ્રકાશિત કરો</button>');
+    if (q.status === 'પ્રકાશિત') actions.push('<button type="button" class="btn-ghost danger" data-status="બંધ">' + am('block') + 'બંધ કરો</button>');
+    if (q.status === 'બંધ') actions.push('<button type="button" class="btn-ghost" data-status="ડ્રાફ્ટ">' + am('edit_note') + 'ડ્રાફ્ટ કરો</button>');
+    root().innerHTML =
+      '<button type="button" class="btn-link back-link" id="ed-back">' + am('arrow_back') + 'ક્વિઝની યાદી</button>' +
+      '<div class="admin-card">' +
+        '<div class="aq-top"><h2>' + am('edit_document') + escapeHtml(q.title) + '</h2>' + statusBadge(q.status) + '</div>' +
+        '<div class="aq-meta">ધોરણ ' + q.std + ' · ' + escapeHtml(q.subject) + ' · સેટ ' + q.setNo + ' · ' + escapeHtml(q.id) + '</div>' +
+        '<div class="form-grid mt-3">' +
+          '<label class="span2">શીર્ષક<input id="ed-title" class="field" value="' + escapeHtml(q.title) + '"></label>' +
+          '<label>શરૂ તારીખ<input id="ed-start" type="date" class="field" value="' + escapeHtml(q.start) + '"></label>' +
+          '<label>અંતિમ તારીખ<input id="ed-end" type="date" class="field" value="' + escapeHtml(q.end) + '"></label>' +
+        '</div>' +
+        '<div class="error-card hidden" id="ed-error"></div>' +
+        '<div class="row-actions wrap">' +
+          '<button type="button" class="btn-ghost" id="ed-save-meta">' + am('save') + 'વિગત સાચવો</button>' +
+          '<button type="button" class="btn-ghost" id="ed-preview"' + (c.questions.length ? '' : ' disabled') + '>' + am('visibility') + 'બાળકની જેમ જુઓ</button>' +
+          actions.join('') +
+        '</div>' +
+        (c.attempts ? '<p class="warn-light">' + am('warning') + 'આ ક્વિઝ ' + c.attempts + ' વાર અપાઈ છે; જવાબ બદલવાથી જૂનું વિશ્લેષણ બદલાઈ શકે.</p>' : '') +
+      '</div>' +
+      '<div class="admin-head"><h3 class="admin-sub">' + am('list') + 'પ્રશ્નો (' + c.questions.length + ')</h3>' +
+        (c.canAddRemove
+          ? '<div class="row-actions"><button type="button" class="btn-ghost" id="ed-bulk">' + am('table_view') + 'Excel / Paste</button>' +
+            '<button type="button" class="btn-primary btn-inline" id="ed-add">' + am('add_circle') + 'પ્રશ્ન ઉમેરો</button></div>'
+          : '') + '</div>' +
+      (c.canAddRemove ? '' : '<p class="warn-light">' + am('lock') + escapeHtml(c.lockReason) + ' પ્રશ્ન સુધારી શકાય છે.</p>') +
+      '<div id="form-slot"></div>' +
+      '<div id="q-list">' + (c.questions.length ? c.questions.map(questionCard).join('') :
+        '<div class="admin-card text-center"><p>હજુ કોઈ પ્રશ્ન નથી. "પ્રશ્ન ઉમેરો" અથવા "Excel / Paste" વાપરો.</p></div>') + '</div>';
+
+    $('ed-back').addEventListener('click', renderDietHome);
+    if (c.canAddRemove) {
+      $('ed-add').addEventListener('click', function () { renderQuestionForm(null); });
+      $('ed-bulk').addEventListener('click', renderBulk);
+    }
+    $('ed-preview').addEventListener('click', function () { renderPreview(0); });
+    $('ed-save-meta').addEventListener('click', function () {
+      updateQuiz({ title: $('ed-title').value, start: $('ed-start').value, end: $('ed-end').value });
+    });
+    root().querySelectorAll('[data-status]').forEach(function (b) {
+      b.addEventListener('click', function () { updateQuiz({ status: b.getAttribute('data-status') }); });
+    });
+    root().querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () { renderQuestionForm(Number(b.getAttribute('data-edit'))); });
+    });
+    root().querySelectorAll('[data-del]').forEach(function (b) {
+      b.addEventListener('click', function () { deleteQuestion(Number(b.getAttribute('data-del'))); });
+    });
+  }
+
+  function questionCard(q) {
+    return '<div class="admin-q">' +
+      '<div class="aq-num">' + q.n + '</div>' +
+      '<div class="grow"><div class="aq-text">' + escapeHtml(q.text).replace(/\n/g, '<br>') + '</div>' +
+        (q.imageUrl ? '<img class="aq-thumb" src="' + escapeHtml(q.imageUrl) + '" alt="">' : '') +
+        (q.hasTable ? '<span class="tag">' + am('table') + 'કોષ્ટક</span>' : '') +
+        '<div class="aq-opts">' + q.options.map(function (o, i) {
+          return '<span class="' + (i === q.correct ? 'ok' : '') + '">' + 'ABCD'.charAt(i) + '. ' + escapeHtml(o) + '</span>';
+        }).join('') + '</div></div>' +
+      '<div class="aq-btns"><button type="button" class="icon-btn" data-edit="' + q.n + '" aria-label="સુધારો">' + am('edit') + '</button>' +
+        (admin.current.canAddRemove ? '<button type="button" class="icon-btn danger" data-del="' + q.n + '" aria-label="કાઢો">' + am('delete') + '</button>' : '') + '</div>' +
+    '</div>';
+  }
+
+  function updateQuiz(changes) {
+    adminCall('apiUpdateQuiz', admin.current.quiz.id, changes).then(function (r) {
+      if (!r) return;
+      if (!r.ok) { showAdminError('ed-error', r.message); return; }
+      admin.current.quiz = r.quiz;
+      renderEditor();
+    });
+  }
+
+  function deleteQuestion(n) {
+    if (!window.confirm('પ્રશ્ન ' + n + ' કાઢી નાખવો છે?')) return;
+    adminCall('apiDeleteQuestion', admin.current.quiz.id, n, expectedFor(n)).then(function (r) {
+      if (!r) return;
+      if (!r.ok) { showAdminError('ed-error', r.message); return; }
+      admin.current.questions = r.questions;
+      renderEditor();
+    });
+  }
+
+  // સ્ક્રીન પર દેખાતો પ્રશ્ન — સર્વર ખાતરી કરે કે વચ્ચે બીજે બદલાયો નથી.
+  function expectedFor(n) {
+    var q = admin.current.questions.filter(function (x) { return x.n === n; })[0];
+    return q ? { html: q.html, options: q.options } : null;
+  }
+
+  // --- પ્રશ્ન ફોર્મ ---
+
+  function renderQuestionForm(n) {
+    var c = admin.current;
+    var q = n === null ? { text: '', options: ['', '', '', ''], correct: -1, explanation: [], lo: '', imageUrl: '', hasTable: false }
+      : c.questions.filter(function (x) { return x.n === n; })[0];
+    admin.image = null;
+    admin.removeImage = false;
+    $('form-slot').innerHTML =
+      '<div class="admin-card q-form"><h2>' + am(n === null ? 'add_circle' : 'edit') + (n === null ? 'નવો પ્રશ્ન' : 'પ્રશ્ન ' + n + ' સુધારો') + '</h2>' +
+        '<label class="block-label">પ્રશ્ન<textarea id="qf-text" class="field area" rows="3">' + escapeHtml(q.text) + '</textarea></label>' +
+        (q.hasTable ? '<p class="warn-light">' + am('table') + 'આ પ્રશ્નમાં કોષ્ટક છે; લખાણ બદલશો તો કોષ્ટક જતું રહેશે.</p>' : '') +
+        '<div class="img-row"><label class="file-drop small">' + am('add_photo_alternate') + '<span>ચિત્ર ઉમેરો</span>' +
+          '<input type="file" id="qf-image" accept="image/png,image/jpeg,image/webp"></label>' +
+          '<div id="qf-img-preview">' + (q.imageUrl ? imagePreview(q.imageUrl) : '') + '</div></div>' +
+        '<div class="opt-grid">' + [0, 1, 2, 3].map(function (i) {
+          return '<label class="opt-input"><input type="radio" name="qf-correct" value="' + i + '"' + (q.correct === i ? ' checked' : '') + '>' +
+            '<span class="opt-letter">' + 'ABCD'.charAt(i) + '</span>' +
+            '<input class="field" id="qf-opt' + i + '" value="' + escapeHtml(q.options[i]) + '" placeholder="વિકલ્પ ' + 'ABCD'.charAt(i) + '"></label>';
+        }).join('') + '</div>' +
+        '<p class="hint">સાચા જવાબ સામેનું ગોળ બટન દબાવો.</p>' +
+        '<label class="block-label">સમજૂતી (દરેક લીટી એક મુદ્દો)<textarea id="qf-expl" class="field area" rows="2">' + escapeHtml(q.explanation.join('\n')) + '</textarea></label>' +
+        '<label class="block-label">LO કોડ<input id="qf-lo" class="field" value="' + escapeHtml(q.lo) + '"></label>' +
+        '<div class="error-card hidden" id="qf-error"></div>' +
+        '<div class="row-actions"><button type="button" class="btn-ghost" id="qf-cancel">' + am('close') + 'રદ કરો</button>' +
+          '<button type="button" class="btn-primary btn-inline" id="qf-save">' + am('save') + 'સાચવો</button></div>' +
+      '</div>';
+    bindImageRemove();
+    $('qf-image').addEventListener('change', onImagePicked);
+    $('qf-cancel').addEventListener('click', function () { $('form-slot').innerHTML = ''; });
+    $('qf-save').addEventListener('click', function () { saveQuestion(n, q); });
+    $('form-slot').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function imagePreview(src) {
+    return '<div class="img-prev"><img src="' + escapeHtml(src) + '" alt=""><button type="button" class="icon-btn danger" id="qf-img-del" aria-label="ચિત્ર કાઢો">' + am('delete') + '</button></div>';
+  }
+
+  function bindImageRemove() {
+    var del = $('qf-img-del');
+    if (del) del.addEventListener('click', function () { admin.image = null; admin.removeImage = true; $('qf-img-preview').innerHTML = ''; });
+  }
+
+  // મોટું ચિત્ર ફોનમાં જ 1200px સુધી નાનું કરો, જેથી upload અને બાળકના ફોન પર ખૂલવું ઝડપી બને.
+  function onImagePicked(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    showAdminError('qf-error', '');
+    if (['image/png', 'image/jpeg', 'image/webp'].indexOf(file.type) === -1) { showAdminError('qf-error', 'ફક્ત PNG, JPG કે WebP ચિત્ર ચાલશે.'); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, MAX_IMAGE_WIDTH / img.width);
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        var mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        var dataUrl = canvas.toDataURL(mime, 0.85);
+        var base64 = dataUrl.split(',')[1];
+        if (base64.length > 2000000) { showAdminError('qf-error', 'ચિત્ર બહુ મોટું છે (1.5 MB થી નાનું જોઈએ).'); return; }
+        admin.image = { base64: base64, mime: mime };
+        admin.removeImage = false;
+        $('qf-img-preview').innerHTML = imagePreview(dataUrl);
+        bindImageRemove();
+      };
+      img.onerror = function () { showAdminError('qf-error', 'ચિત્ર ખૂલ્યું નહીં.'); };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveQuestion(n, old) {
+    var checked = document.querySelector('input[name="qf-correct"]:checked');
+    var input = {
+      text: $('qf-text').value, options: [0, 1, 2, 3].map(function (i) { return $('qf-opt' + i).value; }),
+      correct: checked ? Number(checked.value) : -1, explanation: $('qf-expl').value, lo: $('qf-lo').value
+    };
+    if (old.hasTable && input.text.trim() !== old.text && !window.confirm('લખાણ બદલવાથી કોષ્ટક જતું રહેશે. આગળ વધવું છે?')) return;
+    var btn = $('qf-save');
+    btn.disabled = true;
+    btn.innerHTML = am('progress_activity', 'spin') + 'સચવાઈ રહ્યું છે...';
+    adminCall('apiSaveQuestion', admin.current.quiz.id, n, input, admin.image, !!admin.removeImage,
+      n === null ? null : expectedFor(n)).then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        btn.disabled = false;
+        btn.innerHTML = am('save') + 'સાચવો';
+        showAdminError('qf-error', r.message);
+        return;
+      }
+      admin.current.questions = r.questions;
+      renderEditor();
+    });
+  }
+
+  // --- Excel / Paste ---
+
+  function renderBulk() {
+    admin.bulk = null;
+    $('form-slot').innerHTML =
+      '<div class="admin-card"><h2>' + am('table_view') + 'Excel / Paste થી પ્રશ્નો ઉમેરો</h2>' +
+        '<p class="hint">કૉલમ ક્રમ: ' + BULK_HEADERS.map(escapeHtml).join(' | ') + '. સાચો જવાબ: A–D, 1–4 કે ક–ઘ.</p>' +
+        '<div class="chips"><button type="button" class="chip on" data-bulk="paste">' + am('content_paste') + 'Paste</button>' +
+          '<button type="button" class="chip" data-bulk="excel">' + am('upload_file') + 'Excel ફાઇલ</button></div>' +
+        '<div id="bulk-paste"><textarea id="bulk-text" class="field area" rows="6" placeholder="Excel/Google Sheet માંથી 8 કૉલમ copy કરીને અહીં paste કરો"></textarea></div>' +
+        '<div id="bulk-excel" class="hidden">' +
+          '<label class="file-drop">' + am('folder_open') + '<span id="bulk-file-name">.xlsx ફાઇલ પસંદ કરો</span><input type="file" id="bulk-file" accept=".xlsx,.xls"></label>' +
+          '<button type="button" class="btn-link" id="bulk-template">' + am('download') + 'નમૂનો ડાઉનલોડ કરો</button>' +
+        '</div>' +
+        '<div class="error-card hidden" id="bulk-error"></div>' +
+        '<div id="bulk-preview"></div>' +
+        '<div class="row-actions"><button type="button" class="btn-ghost" id="bulk-cancel">' + am('close') + 'રદ કરો</button>' +
+          '<button type="button" class="btn-primary btn-inline" id="bulk-add" disabled>' + am('cloud_upload') + 'ઉમેરો</button></div>' +
+      '</div>';
+    root().querySelectorAll('[data-bulk]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var mode = b.getAttribute('data-bulk');
+        root().querySelectorAll('[data-bulk]').forEach(function (x) { x.classList.toggle('on', x === b); });
+        $('bulk-paste').classList.toggle('hidden', mode !== 'paste');
+        $('bulk-excel').classList.toggle('hidden', mode !== 'excel');
+        if (mode === 'excel') loadXlsx(function () {});
+      });
+    });
+    $('bulk-text').addEventListener('input', function () { showBulkPreview(parseTsv($('bulk-text').value)); });
+    $('bulk-file').addEventListener('change', onBulkFile);
+    $('bulk-template').addEventListener('click', downloadTemplate);
+    $('bulk-cancel').addEventListener('click', function () { $('form-slot').innerHTML = ''; });
+    $('bulk-add').addEventListener('click', addBulk);
+    $('form-slot').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showBulkPreview(rows) {
+    var r = bulkRowsToQuestions(rows);
+    admin.bulk = r;
+    var byRow = {};
+    r.errors.forEach(function (e) { byRow[e.row] = e.message; });
+    var html = '';
+    if (r.questions.length || r.errors.length) {
+      html = '<p class="bulk-count">' + am(r.errors.length ? 'error' : 'task_alt') + r.questions.length + ' પ્રશ્નો ઉમેરાશે, ' + r.errors.length + ' માં ભૂલ' +
+        (r.errors.length ? ' — ભૂલ સુધારો પછી જ ઉમેરાશે.' : '') + '</p>' +
+        '<div class="table-wrap"><table class="summary-table"><thead><tr><th>હરોળ</th><th>પ્રશ્ન</th><th>જવાબ</th><th>સ્થિતિ</th></tr></thead><tbody>' +
+        rows.map(function (cells, i) {
+          var rowNo = i + 1;
+          var q = r.questions.filter(function (x) { return x.row === rowNo; })[0];
+          if (!q && !byRow[rowNo]) return '';
+          return '<tr class="' + (byRow[rowNo] ? 'bad-row' : '') + '"><td>' + rowNo + '</td><td>' + escapeHtml(String(cells[0] || '').slice(0, 60)) + '</td>' +
+            '<td>' + (q ? 'ABCD'.charAt(q.correct) : '—') + '</td><td>' + (byRow[rowNo] ? escapeHtml(byRow[rowNo]) : 'બરાબર') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    $('bulk-preview').innerHTML = html;
+    $('bulk-add').disabled = !(r.questions.length && !r.errors.length);
+  }
+
+  function loadXlsx(done) {
+    if (window.XLSX) { done(); return; }
+    var s = document.createElement('script');
+    s.src = XLSX_URL;
+    s.onload = done;
+    s.onerror = function () { showAdminError('bulk-error', 'Excel સાધન લોડ ન થયું. નેટ તપાસો અથવા Paste વાપરો.'); };
+    document.head.appendChild(s);
+  }
+
+  function onBulkFile(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    $('bulk-file-name').textContent = file.name;
+    showAdminError('bulk-error', '');
+    loadXlsx(function () {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var wb = XLSX.read(new Uint8Array(reader.result), { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          // raw:false — ખાનામાં જેવું દેખાય તેવું લખાણ ("1/2", "6,000"), તારીખ/નંબરમાં ફેરવ્યા વગર.
+          showBulkPreview(xlsxRowsFromSheet(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false })));
+        } catch (err) {
+          showAdminError('bulk-error', 'આ Excel ફાઇલ વાંચી શકાઈ નહીં.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function downloadTemplate() {
+    loadXlsx(function () {
+      var ws = XLSX.utils.aoa_to_sheet([
+        BULK_HEADERS,
+        ['25 + 17 = ?', '32', '42', '52', '41', 'B', '25 + 17 = 42', 'M501'],
+        ['ભારતની રાજધાની કઈ છે?', 'મુંબઈ', 'દિલ્હી', 'કોલકાતા', 'ચેન્નાઈ', 'ખ', 'દિલ્હી ભારતની રાજધાની છે.', '']
+      ]);
+      ws['!cols'] = [{ wch: 40 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 30 }, { wch: 10 }];
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'પ્રશ્નો');
+      XLSX.writeFile(wb, 'પરખ-પ્રશ્નો-નમૂનો.xlsx');
+    });
+  }
+
+  function addBulk() {
+    var btn = $('bulk-add');
+    btn.disabled = true;
+    btn.innerHTML = am('progress_activity', 'spin') + 'ઉમેરાઈ રહ્યું છે...';
+    var inputs = admin.bulk.questions.map(function (q) {
+      return { text: q.text, options: q.options, correct: q.correct, explanation: q.explanation, lo: q.lo };
+    });
+    adminCall('apiAddQuestions', admin.current.quiz.id, inputs).then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        btn.disabled = false;
+        btn.innerHTML = am('cloud_upload') + 'ઉમેરો';
+        showAdminError('bulk-error', r.message);
+        return;
+      }
+      admin.current.questions = r.questions;
+      renderEditor();
+    });
+  }
+
+  // --- બાળકની જેમ પૂર્વાવલોકન (જવાબ છુપા) ---
+
+  function renderPreview(i) {
+    var qs = admin.current.questions;
+    var q = qs[i];
+    $('form-slot').innerHTML =
+      '<div class="preview-shell"><div class="preview-bar"><span>' + am('visibility') + 'બાળકને આમ દેખાશે · પ્રશ્ન ' + (i + 1) + '/' + qs.length + '</span>' +
+        '<button type="button" class="icon-btn light" id="pv-close" aria-label="બંધ">' + am('close') + '</button></div>' +
+        '<div class="glass-card quiz-box"><div class="q-html">' + q.html + '</div><div class="options">' +
+          q.options.map(function (o, k) { return '<div class="option"><span class="opt-letter">' + 'ABCD'.charAt(k) + '</span><span>' + escapeHtml(o) + '</span></div>'; }).join('') +
+        '</div><div class="quiz-nav">' +
+          '<button type="button" class="btn-ghost" id="pv-prev"' + (i === 0 ? ' disabled' : '') + '>' + am('chevron_left') + 'પાછળ</button>' +
+          '<button type="button" class="btn-ghost" id="pv-next"' + (i === qs.length - 1 ? ' disabled' : '') + '>આગળ' + am('chevron_right') + '</button>' +
+        '</div></div></div>';
+    $('pv-close').addEventListener('click', function () { $('form-slot').innerHTML = ''; });
+    $('pv-prev').addEventListener('click', function () { renderPreview(i - 1); });
+    $('pv-next').addEventListener('click', function () { renderPreview(i + 1); });
+    $('form-slot').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+
+  <script>
+  // પરખ – આણંદ : ડેશબોર્ડ (DDO/DPEO/DIET/BRC/CRC/શાળા) — દરેકને પોતાનો વિસ્તાર, ક્લિક કરીને નીચે જાઓ.
+  var QR_URL = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  var LEVEL_LABELS = { district: 'જિલ્લો', taluka: 'તાલુકો', crc: 'ક્લસ્ટર', school: 'શાળા', student: 'બાળક' };
+  var BUCKET_LABELS = ['0–30%', '31–60%', '61–80%', '81–100%'];
+  var dash = { params: {}, data: null, sortKey: 'name', status: null, statusFilter: 'all' };
+
+  function dm(name, extra) { return '<span class="ms' + (extra ? ' ' + extra : '') + '">' + name + '</span>'; }
+  function dashRoot() { return $('tab-body') || $('app-home'); }
+  function fmtPct(v) { return v === null || v === undefined ? '—' : v + '%'; }
+  function pctClass(v) { return v === null ? '' : v < 40 ? 'low' : v <= 70 ? 'mid' : 'high'; }
+  function bar(v) { return '<div class="dbar"><div class="' + pctClass(v) + '" style="width:' + (v || 0) + '%"></div></div>'; }
+
+  routes.dash = function (data) { renderDashboard(data || {}, true); };
+
+  // DIET: બે tab (ડેશબોર્ડ / ક્વિઝ). બાકીના અધિકારીઓ: ફક્ત ડેશબોર્ડ.
+  function renderOfficialHome() {
+    var isDiet = state.session.role === 'DIET';
+    $('app-home').innerHTML = (isDiet
+      ? '<div class="tabs light-tabs"><button type="button" class="tab active" data-home="dash">' + dm('monitoring') + 'ડેશબોર્ડ</button>' +
+        '<button type="button" class="tab" data-home="quiz">' + dm('quiz') + 'ક્વિઝ</button></div>'
+      : '') + '<div id="tab-body"></div>';
+    document.querySelectorAll('[data-home]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('[data-home]').forEach(function (x) { x.classList.toggle('active', x === b); });
+        if (b.getAttribute('data-home') === 'quiz') { dash.seq = (dash.seq || 0) + 1; renderDietHome(); } else renderDashboard({}, true);
+      });
+    });
+    renderDashboard({}, true);
+  }
+
+  function renderDashboard(params, fromHistory) {
+    dash.params = params || {};
+    if (!fromHistory) navPush('dash', dash.params);
+    // જલદી ક્લિક કરો તો જૂનો (મોડો આવેલો) જવાબ નવી સ્ક્રીન પર ન લખાય.
+    var seq = dash.seq = (dash.seq || 0) + 1;
+    dash.statusFilter = 'all';
+    dashRoot().innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">ડેશબોર્ડ તૈયાર થઈ રહ્યું છે...</p></div>';
+    callServer('apiDashboard', getToken(), dash.params).then(function (r) {
+      if (seq !== dash.seq || !$('tab-body') && !$('app-home')) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      dash.data = r;
+      drawDashboard();
+    });
+  }
+
+  function go(changes) {
+    var p = {};
+    Object.keys(dash.params).forEach(function (k) { p[k] = dash.params[k]; });
+    Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
+    renderDashboard(p);
+  }
+
+  function drawDashboard() {
+    var d = dash.data;
+    var c = d.cards;
+    var subjects = [];
+    d.filters.quizzes.forEach(function (q) { if (subjects.indexOf(q.subject) === -1) subjects.push(q.subject); });
+    var html =
+      '<div class="crumbs">' + d.path.map(function (p, i) {
+        var last = i === d.path.length - 1;
+        return (i ? dm('chevron_right', 'crumb-sep') : '') + (last ? '<b>' + escapeHtml(p.name) + '</b>'
+          : '<button type="button" class="crumb" data-crumb="' + i + '">' + escapeHtml(p.name) + '</button>');
+      }).join('') + '</div>' +
+      '<div class="dash-filters">' +
+        '<div class="chips">' + [['', 'બધાં ધોરણ'], ['5', 'ધોરણ 5'], ['8', 'ધોરણ 8']].map(function (o) {
+          return '<button type="button" class="chip' + (String(d.filters.std || '') === o[0] ? ' on' : '') + '" data-std-f="' + o[0] + '">' + o[1] + '</button>';
+        }).join('') + '</div>' +
+        '<select class="field" id="f-subject"><option value="">બધા વિષય</option>' + subjects.map(function (s) {
+          return '<option' + (s === d.filters.subject ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
+        }).join('') + '</select>' +
+        '<select class="field" id="f-quiz"><option value="">બધી ક્વિઝ</option>' + d.filters.quizzes.map(function (q) {
+          return '<option value="' + escapeHtml(q.id) + '"' + (q.id === d.filters.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
+        }).join('') + '</select>' +
+      '</div>' +
+      '<div class="kpis">' +
+        kpi('groups', 'કુલ બાળકો', c.enrolled) +
+        kpi('how_to_reg', d.filters.quizId ? 'ક્વિઝ આપનાર' : 'ક્વિઝ આપનાર બાળકો', c.participants) +
+        kpi('percent', 'ભાગીદારી', fmtPct(c.participation)) +
+        kpi('grade', 'સરેરાશ ગુણ', fmtPct(c.avg)) +
+      '</div>';
+
+    if (!c.participants) {
+      html += '<div class="admin-card text-center">' + dm('hourglass_empty', 'icon-hero') + '<p>ક્વિઝ પરિણામ હજુ નથી.</p></div>';
+    } else {
+      var maxB = Math.max.apply(null, c.buckets.concat([1]));
+      html += '<div class="admin-card"><h2>' + dm('bar_chart') + 'ગુણ વિતરણ <small class="muted">(' + (d.filters.quizId ? 'આ ક્વિઝ' : 'બધી ક્વિઝ') + ', પહેલો પ્રયત્ન · કુલ પ્રયત્નો ' + c.attempts + ')</small></h2>' +
+        c.buckets.map(function (v, i) {
+          return '<div class="brow"><span>' + BUCKET_LABELS[i] + '</span><div class="dbar"><div class="b' + i + '" style="width:' + Math.round(100 * v / maxB) + '%"></div></div><b>' + v + '</b></div>';
+        }).join('') + '</div>';
+    }
+    html += childrenTable(d) + rankingCards(d) + questionCards(d) + loCards(d);
+    if (d.unit.level === 'school') html += '<div id="school-box"></div>';
+    dashRoot().innerHTML = html;
+
+    dashRoot().querySelectorAll('[data-crumb]').forEach(function (b) {
+      b.addEventListener('click', function () { var p = d.path[Number(b.getAttribute('data-crumb'))]; go({ level: p.level, id: p.id }); });
+    });
+    dashRoot().querySelectorAll('[data-std-f]').forEach(function (b) {
+      b.addEventListener('click', function () { go({ std: b.getAttribute('data-std-f'), subject: '', quizId: '' }); });
+    });
+    $('f-subject').addEventListener('change', function () { go({ subject: this.value, quizId: '' }); });
+    $('f-quiz').addEventListener('change', function () { go({ quizId: this.value }); });
+    dashRoot().querySelectorAll('[data-drill]').forEach(function (b) {
+      b.addEventListener('click', function () { go({ level: b.getAttribute('data-level'), id: b.getAttribute('data-drill') }); });
+    });
+    dashRoot().querySelectorAll('[data-sort]').forEach(function (b) {
+      b.addEventListener('click', function () { dash.sortKey = b.getAttribute('data-sort'); drawDashboard(); });
+    });
+    if (d.unit.level === 'school') loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
+  }
+
+  function kpi(icon, label, value) {
+    return '<div class="kpi">' + dm(icon) + '<div><div class="kpi-v">' + value + '</div><div class="kpi-l">' + label + '</div></div></div>';
+  }
+
+  function childrenTable(d) {
+    if (!d.children.length) return '';
+    var isStudent = d.children[0].level === 'student';
+    var rows = d.children.slice();
+    var k = dash.sortKey;
+    if (k !== 'name' && rows[0][k] !== undefined) rows.sort(function (a, b) { return (b[k] === null ? -1 : b[k]) - (a[k] === null ? -1 : a[k]); });
+    return '<div class="admin-card"><h2>' + dm(isStudent ? 'person' : 'account_tree') + LEVEL_LABELS[d.children[0].level] + ' પ્રમાણે</h2>' +
+      '<div class="table-wrap"><table class="summary-table dash-table"><thead><tr>' +
+        '<th><button type="button" data-sort="name">નામ</button></th>' +
+        (isStudent ? '<th>રોલ</th><th>પ્રયત્નો</th>' : '<th><button type="button" data-sort="participants">આપનાર</button></th><th><button type="button" data-sort="participation">ભાગીદારી</button></th>') +
+        '<th><button type="button" data-sort="avg">સરેરાશ</button></th></tr></thead><tbody>' +
+      rows.map(function (u) {
+        var name = isStudent ? escapeHtml(u.name)
+          : '<button type="button" class="drill" data-level="' + u.level + '" data-drill="' + escapeHtml(u.id) + '">' + escapeHtml(u.name) + dm('chevron_right') + '</button>';
+        return '<tr><td>' + name + '</td>' +
+          (isStudent ? '<td>' + u.roll + '</td><td>' + u.attempts + '</td>'
+            : '<td>' + u.participants + ' / ' + u.enrolled + '</td><td>' + bar(u.participation) + fmtPct(u.participation) + '</td>') +
+          '<td>' + bar(u.avg) + fmtPct(u.avg) + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  }
+
+  function rankingCards(d) {
+    if (!d.ranking || !d.ranking.top.length) return '';
+    function list(items) {
+      return '<ol class="rank">' + items.map(function (u) { return '<li><span>' + escapeHtml(u.name) + '</span><b>' + u.avg + '%</b></li>'; }).join('') + '</ol>';
+    }
+    return '<div class="rank-grid"><div class="admin-card"><h2>' + dm('trending_up') + 'ટોચના 10</h2>' + list(d.ranking.top) + '</div>' +
+      '<div class="admin-card"><h2>' + dm('trending_down') + 'છેલ્લા 10</h2>' + list(d.ranking.bottom) + '</div></div>' +
+      '<p class="hint">ઓછામાં ઓછા 5 બાળકોએ આપી હોય એવા એકમો જ ક્રમમાં ગણ્યા છે.</p>';
+  }
+
+  function questionCards(d) {
+    if (!d.questions || !d.cards.participants) return '';
+    return '<div class="admin-card"><h2>' + dm('quiz') + 'પ્રશ્ન વિશ્લેષણ <small class="muted">(અઘરા પહેલાં)</small></h2>' +
+      d.questions.map(function (q) {
+        return '<div class="qa">' +
+          '<div class="qa-head"><span class="aq-num">' + q.n + '</span><div class="grow">' + escapeHtml(q.text).replace(/\n/g, '<br>') + '</div>' +
+            '<b class="qa-pct ' + pctClass(q.pct) + '">' + fmtPct(q.pct) + '</b></div>' +
+          q.optionTexts.map(function (t, k) {
+            var cls = k === q.correct ? 'ok' : k === q.wrongTop ? 'bad' : '';
+            return '<div class="brow opt ' + cls + '"><span>' + 'ABCD'.charAt(k) + '. ' + escapeHtml(t) + '</span><div class="dbar"><div style="width:' + q.options[k] + '%"></div></div><b>' + q.options[k] + '%</b></div>';
+          }).join('') +
+          (q.options[4] ? '<div class="brow opt"><span>જવાબ નહીં</span><div class="dbar"><div style="width:' + q.options[4] + '%"></div></div><b>' + q.options[4] + '%</b></div>' : '') +
+          (q.wrongTop !== null && q.options[q.wrongTop] ? '<p class="warn-light">' + dm('warning') + 'સૌથી વધુ પસંદ થયેલો ખોટો વિકલ્પ: ' + 'ABCD'.charAt(q.wrongTop) + ' (' + q.options[q.wrongTop] + '%)</p>' : '') +
+        '</div>';
+      }).join('') + '</div>';
+  }
+
+  function loCards(d) {
+    if (!d.lo || !d.lo.length || !d.cards.participants) return '';
+    return '<div class="admin-card"><h2>' + dm('school') + 'LO વિશ્લેષણ</h2>' + d.lo.map(function (l) {
+      return '<div class="brow"><span>' + escapeHtml(l.lo) + ' <small class="muted">(' + l.n + ' પ્રશ્ન)</small></span>' + bar(l.pct) + '<b>' + fmtPct(l.pct) + '</b></div>';
+    }).join('') + '</div>';
+  }
+
+  // --- શાળા: લિંક/QR + આપી/બાકી યાદી ---
+
+  function loadSchoolBox(dise, quizId) {
+    var box = $('school-box');
+    box.innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div></div>';
+    callServer('apiSchoolQuizStatus', getToken(), { dise: dise, quizId: quizId }).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { box.innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      dash.status = r;
+      drawSchoolBox();
+    });
+  }
+
+  function drawSchoolBox() {
+    var r = dash.status;
+    var shown = r.students.filter(function (s) { return dash.statusFilter === 'all' || s.status === dash.statusFilter; });
+    var done = r.students.filter(function (s) { return s.status === 'આપી'; }).length;
+    $('school-box').innerHTML =
+      '<div class="admin-card"><h2>' + dm('share') + 'બાળકો માટે લિંક</h2>' +
+        '<div class="link-row"><input class="field" id="kid-link" readonly value="' + escapeHtml(r.link) + '">' +
+        '<button type="button" class="btn-ghost" id="copy-link">' + dm('content_copy') + 'Copy</button></div>' +
+        '<div id="qr" class="qr"></div><p class="hint">બાળકો આ લિંક ખોલી ડાયસ કોડ, ધોરણ અને રોલ નંબરથી પ્રવેશ કરે.</p></div>' +
+      '<div class="admin-card"><h2>' + dm('checklist') + 'ક્વિઝ આપી / બાકી</h2>' +
+        '<select class="field" id="st-quiz">' + r.quizzes.map(function (q) {
+          return '<option value="' + escapeHtml(q.id) + '"' + (q.id === r.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
+        }).join('') + '</select>' +
+        (r.students.length
+          ? '<p class="bulk-count">' + dm('how_to_reg') + done + ' / ' + r.students.length + ' બાળકોએ આપી</p>' +
+            '<div class="chips">' + [['all', 'બધા'], ['આપી', 'આપી'], ['બાકી', 'બાકી']].map(function (o) {
+              return '<button type="button" class="chip' + (dash.statusFilter === o[0] ? ' on' : '') + '" data-sf="' + o[0] + '">' + o[1] + '</button>';
+            }).join('') + '</div>' +
+            '<div class="table-wrap"><table class="summary-table"><thead><tr><th>રોલ</th><th>નામ</th><th>સ્થિતિ</th><th>પહેલો / શ્રેષ્ઠ</th></tr></thead><tbody>' +
+            shown.map(function (s) {
+              var doneRow = s.status === 'આપી';
+              return '<tr><td>' + s.roll + '</td><td>' + escapeHtml(s.name) + '</td><td class="' + (doneRow ? 'st-done' : 'st-pending') + '">' +
+                dm(doneRow ? 'check_circle' : 'pending') + s.status + '</td><td>' + (doneRow ? s.first + ' / ' + s.best + ' (' + s.total + ')' : '—') + '</td></tr>';
+            }).join('') + '</tbody></table></div>'
+          : '<p class="hint">આ ધોરણનાં બાળકો યાદીમાં નથી.</p>') +
+      '</div>';
+    $('copy-link').addEventListener('click', function () {
+      var btn = this;
+      var input = $('kid-link');
+      input.select();
+      // Google ના iframe માં clipboard API ઘણી વાર બંધ હોય છે: પહેલાં execCommand, પછી clipboard.
+      var copied = false;
+      try { copied = document.execCommand('copy'); } catch (e) { copied = false; }
+      function done(ok) { btn.innerHTML = ok ? dm('check') + 'Copied' : dm('content_copy') + 'લિંક પસંદ થઈ છે — Ctrl+C દબાવો'; }
+      if (copied) { done(true); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(function () { done(true); }, function () { done(false); });
+      } else {
+        done(false);
+      }
+    });
+    $('st-quiz').addEventListener('change', function () { loadSchoolBox(r.school.dise, this.value); });
+    document.querySelectorAll('[data-sf]').forEach(function (b) {
+      b.addEventListener('click', function () { dash.statusFilter = b.getAttribute('data-sf'); drawSchoolBox(); });
+    });
+    drawQr(r.link);
+  }
+
+  function drawQr(link) {
+    function draw() { try { $('qr').innerHTML = ''; new QRCode($('qr'), { text: link, width: 168, height: 168 }); } catch (e) {} }
+    if (window.QRCode) { draw(); return; }
+    var s = document.createElement('script');
+    s.src = QR_URL;
+    s.onload = draw;
+    document.head.appendChild(s);
+  }
+</script>
+
+  <script>
+  // પરખ – આણંદ : client સ્ક્રીનો (લોગીન, પાસવર્ડ બદલો, હોમ)
+  var TOKEN_KEY = 'parakh_token';
+  var ROLE_COLORS = {
+    DDO: '#b91c1c', DPEO: '#b91c1c', DIET: '#7c3aed', BRC: '#0369a1',
+    CRC: '#0f766e', SCHOOL: '#c2410c', STUDENT: '#db2777'
+  };
+  var state = { session: null, std: null, token: null };
+
+  function $(id) { return document.getElementById(id); }
+
+  // token મેમરીમાં પણ રાખો: private mode માં sessionStorage ન ચાલે તો પણ લોગીન ટકે.
+  function getToken() {
+    if (state.token) return state.token;
+    try { return sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+  }
+  function setToken(t) { state.token = t; try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
+  function clearToken() { state.token = null; try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+
+  function callServer(fnName) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve) {
+      var runner = google.script.run
+        .withSuccessHandler(function (r) { resolve(r || { ok: false, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); })
+        .withFailureHandler(function () { resolve({ ok: false, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); });
+      runner[fnName].apply(runner, args);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function showScreen(name) {
+    ['loading', 'login', 'change', 'home'].forEach(function (n) {
+      $('screen-' + n).classList.toggle('hidden', n !== name);
+    });
+    var official = state.session && state.session.role !== 'STUDENT' && name === 'home';
+    document.body.classList.toggle('theme-official', !!official);
+    document.body.classList.toggle('theme-student', !official);
+    $('topbar').classList.toggle('hidden', !(state.session && (name === 'home' || name === 'change')));
+    window.scrollTo(0, 0);
+  }
+
+  function setError(form, message) {
+    var box = form.querySelector('[data-error]');
+    box.textContent = message || '';
+    box.classList.toggle('hidden', !message);
+  }
+
+  function setBusy(form, busy) {
+    var btn = form.querySelector('button[type=submit]');
+    if (!btn.getAttribute('data-html')) btn.setAttribute('data-html', btn.innerHTML);
+    btn.disabled = busy;
+    btn.innerHTML = busy ? '<span class="ms spin">progress_activity</span>ચકાસણી ચાલુ છે...' : btn.getAttribute('data-html');
+  }
+
+  function showLoginInfo(message) {
+    $('login-info').textContent = message || '';
+    $('login-info').classList.toggle('hidden', !message);
+  }
+
+  // --- લોગીન ---
+
+  function selectTab(tab) {
+    document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
+    $('form-student').classList.toggle('hidden', tab !== 'student');
+    $('form-official').classList.toggle('hidden', tab !== 'official');
+  }
+
+  function selectStd(std) {
+    state.std = std;
+    document.querySelectorAll('.std-btn').forEach(function (b) { b.classList.toggle('selected', b.getAttribute('data-std') === std); });
+  }
+
+  function onLoggedIn(result) {
+    setToken(result.token);
+    state.session = result.session;
+    showLoginInfo('');
+    navReplace('home');
+    renderTopbar();
+    if (state.session.mustChange) openChange(true); else renderHome();
+  }
+
+  function submitStudent(e) {
+    e.preventDefault();
+    var form = e.target;
+    var dise = $('st-dise').value.trim();
+    var roll = $('st-roll').value.trim();
+    if (!dise || !roll || !state.std) { setError(form, 'ડાયસ કોડ, ધોરણ અને રોલ નંબર બરાબર ભરો.'); return; }
+    setError(form, '');
+    setBusy(form, true);
+    callServer('apiStudentLogin', dise, state.std, roll).then(function (r) {
+      setBusy(form, false);
+      if (!r.ok) { setError(form, r.message); return; }
+      form.reset();
+      selectStd(null);
+      onLoggedIn(r);
+    });
+  }
+
+  function submitOfficial(e) {
+    e.preventDefault();
+    var form = e.target;
+    var id = $('of-id').value.trim();
+    var pw = $('of-pw').value;
+    if (!id || !pw) { setError(form, 'લોગીન ID અને પાસવર્ડ બંને ભરો.'); return; }
+    setError(form, '');
+    setBusy(form, true);
+    callServer('apiLogin', id, pw).then(function (r) {
+      setBusy(form, false);
+      if (!r.ok) { setError(form, r.message); return; }
+      form.reset();
+      onLoggedIn(r);
+    });
+  }
+
+  // --- પાસવર્ડ બદલો ---
+
+  function openChange(forced) {
+    $('form-change').reset();
+    setError($('form-change'), '');
+    $('change-note').classList.toggle('hidden', !forced);
+    $('btn-change-cancel').classList.toggle('hidden', forced);
+    showScreen('change');
+  }
+
+  function submitChange(e) {
+    e.preventDefault();
+    var form = e.target;
+    var oldPw = $('ch-old').value;
+    var newPw = $('ch-new').value;
+    if (newPw !== $('ch-new2').value) { setError(form, 'બંને નવા પાસવર્ડ સરખા નથી.'); return; }
+    setError(form, '');
+    setBusy(form, true);
+    callServer('apiChangePassword', getToken(), oldPw, newPw).then(function (r) {
+      setBusy(form, false);
+      if (r.expired) { logoutLocal(r.message); return; }
+      if (!r.ok) { setError(form, r.message); return; }
+      state.session = r.session;
+      renderHome();
+    });
+  }
+
+  // --- હોમ ---
+
+  function scopeLine(s) {
+    if (s.role === 'BRC') return 'તાલુકો: ' + s.taluka;
+    if (s.role === 'CRC') return 'CRC: ' + s.crc + (s.taluka ? ' · ' + s.taluka : '');
+    if (s.role === 'SCHOOL') return s.schoolName || s.name;
+    if (s.role === 'STUDENT') return s.schoolName + ' · ધોરણ ' + s.std + ' · રોલ ' + s.roll;
+    return 'આખો જિલ્લો';
+  }
+
+  function renderTopbar() {
+    var s = state.session;
+    var badge = $('role-badge');
+    badge.textContent = s.roleLabel;
+    badge.style.background = ROLE_COLORS[s.role] || '#475569';
+    $('top-name').textContent = s.name;
+    $('top-scope').textContent = scopeLine(s);
+    $('btn-change').classList.toggle('hidden', s.role === 'STUDENT');
+  }
+
+  function renderHome() {
+    var s = state.session;
+    renderTopbar();
+    showScreen('home');
+    if (s.role === 'STUDENT') { renderStudentHome(); return; }
+    renderOfficialHome();
+  }
+
+  // --- ફોનનું Back બટન: google.script.history (app Google ના iframe માં ચાલે છે) ---
+  // દરેક મોડ્યુલ routes[view] = function (data) {...} નોંધાવે; નવી સ્ક્રીન વખતે navPush(view, data).
+  // routes અને leaveGuard Index.html માં પહેલેથી જાહેર છે (StudentApp/AdminApp આ ફાઇલ પહેલાં લોડ થાય છે).
+
+  function historyApi() {
+    try { return google.script.history || null; } catch (e) { return null; }
+  }
+  function navPush(view, data) {
+    var h = historyApi();
+    if (h) try { h.push({ view: view, data: data || null }, {}, view); } catch (e) {}
+  }
+  function navReplace(view, data) {
+    var h = historyApi();
+    if (h) try { h.replace({ view: view, data: data || null }, {}, view); } catch (e) {}
+  }
+  function onNavChange(e) {
+    if (!state.session) return;
+    var st = e && e.state;
+    var view = st && st.view ? st.view : 'home';
+    if (routes[view]) routes[view](st ? st.data : null); else renderHome();
+  }
+  routes.home = function () { if (!leaveGuard || leaveGuard()) renderHome(); };
+
+  // સર્વર "સત્ર પૂરું" કહે ત્યારે બધી સ્ક્રીન માટે એક જ જગ્યા.
+  function handleExpired(r) {
+    if (r && r.expired) { logoutLocal(r.message); return true; }
+    return false;
+  }
+
+  function logoutLocal(message) {
+    clearToken();
+    state.session = null;
+    showLoginInfo(message || '');
+    showScreen('login');
+  }
+
+  function logout() {
+    var token = getToken();
+    logoutLocal('');
+    if (token) callServer('apiLogout', token);
+  }
+
+  // --- શરૂઆત ---
+
+  function init() {
+    document.querySelectorAll('.tab').forEach(function (b) {
+      b.addEventListener('click', function () { selectTab(b.getAttribute('data-tab')); });
+    });
+    document.querySelectorAll('.std-btn').forEach(function (b) {
+      b.addEventListener('click', function () { selectStd(b.getAttribute('data-std')); });
+    });
+    document.querySelectorAll('[data-eye]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var input = $(b.getAttribute('data-eye'));
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        b.querySelector('.ms').textContent = show ? 'visibility_off' : 'visibility';
+      });
+    });
+    $('form-student').addEventListener('submit', submitStudent);
+    $('form-official').addEventListener('submit', submitOfficial);
+    $('form-change').addEventListener('submit', submitChange);
+    $('btn-logout').addEventListener('click', logout);
+    $('btn-change').addEventListener('click', function () { openChange(false); });
+    $('btn-change-cancel').addEventListener('click', renderHome);
+    var h = historyApi();
+    if (h) try { h.setChangeHandler(onNavChange); } catch (e) {}
+
+    var token = getToken();
+    if (!token) { showScreen('login'); return; }
+    callServer('apiGetSession', token).then(function (r) {
+      if (!r.ok) { logoutLocal(r.message); return; }
+      state.session = r.session;
+      if (state.session.mustChange) { renderTopbar(); openChange(true); } else renderHome();
+    });
+  }
+
+  init();
+</script>
+
+</body>
+</html>
