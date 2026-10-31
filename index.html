@@ -159,6 +159,10 @@
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); display: flex; flex-direction: column; gap: 6px; }
   .quiz-card:active { transform: scale(.98); }
   .quiz-card.done { background: rgba(34,197,94,.18); border-color: rgba(134,239,172,.6); }
+  .quiz-card.locked { opacity: .55; cursor: not-allowed; background: rgba(15,23,42,.35); }
+  .quiz-card.locked:active { transform: none; }
+  .shuffle-note { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px;
+    background: rgba(250,204,21,.18); border: 1px solid rgba(253,224,71,.5); font-size: .9rem; }
   .quiz-set { font-size: 1.2rem; font-weight: 800; }
   .quiz-status { display: flex; align-items: center; font-size: .9rem; opacity: .9; line-height: 1.3; }
   .pending-card, .explain { display: flex; gap: 10px; align-items: center; border-radius: 16px; padding: 12px 14px; }
@@ -244,7 +248,7 @@
   .dash-filters { display: grid; grid-template-columns: auto repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: center; margin-bottom: 14px; }
   .dash-filters .chips { margin: 0; }
   @media (max-width: 720px) { .dash-filters { grid-template-columns: 1fr; } }
-  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
   @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .kpi { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
   .kpi > .ms { font-size: 2rem; color: #4f46e5; background: #eef2ff; border-radius: 12px; padding: 6px; margin: 0; }
@@ -747,10 +751,18 @@
           '<div class="quiz-grid">';
         groups[subject].forEach(function (q) {
           var done = q.attempts > 0;
+          // પહેલાંનો સેટ બાકી હોય તો આ સેટ બંધ (ક્રમમાં જ ખૂલે).
+          if (q.locked) {
+            html += '<button type="button" class="quiz-card locked" disabled>' +
+              '<span class="quiz-set">સેટ ' + q.setNo + '</span>' +
+              '<span class="quiz-status">' + ms('lock') + 'પહેલાં સેટ ' + q.needSet + ' આપો</span></button>';
+            return;
+          }
           html += '<button type="button" class="quiz-card' + (done ? ' done' : '') + '" data-quiz="' + escapeHtml(q.id) + '">' +
             '<span class="quiz-set">સેટ ' + q.setNo + '</span>' +
             (done
-              ? '<span class="quiz-status">' + ms('check_circle') + 'પહેલો: ' + q.first + '/' + q.total + ' · શ્રેષ્ઠ: ' + q.best + '/' + q.total + '</span>'
+              ? '<span class="quiz-status">' + ms('check_circle') + 'પહેલો: ' + q.first + '/' + q.total + ' · શ્રેષ્ઠ: ' + q.best + '/' + q.total + '</span>' +
+                '<span class="quiz-status">' + ms('replay') + q.attempts + ' પ્રયત્ન · ફરી આપો</span>'
               : '<span class="quiz-status">' + ms('play_circle') + 'શરૂ કરો</span>') +
             '</button>';
         });
@@ -793,6 +805,7 @@
     var html = '<div class="glass-card quiz-box">' +
       '<div class="quiz-head"><span>' + escapeHtml(s.quiz.title) + '</span><span class="pill">પ્રશ્ન ' + (s.index + 1) + '/' + s.questions.length + '</span></div>' +
       progressBar(s.index + 1, s.questions.length) +
+      (s.quiz.shuffled && s.index === 0 ? '<p class="shuffle-note">' + ms('shuffle') + 'આ ફરીથી પ્રયત્ન છે: વિકલ્પોનો ક્રમ બદલાયો છે, ધ્યાનથી વાંચો.</p>' : '') +
       '<div class="q-html">' + q.html + '</div><div class="options">';
     q.options.forEach(function (opt, i) {
       html += '<button type="button" class="option' + (s.answers[s.index] === i ? ' chosen' : '') + '" data-opt="' + i + '">' +
@@ -848,7 +861,7 @@
     var btn = $('q-submit');
     if (btn) { btn.disabled = true; btn.innerHTML = ms('progress_activity', 'spin') + 'પરિણામ સેવ થઈ રહ્યું છે...'; }
     else home().innerHTML = loadingCard('પરિણામ સેવ થઈ રહ્યું છે...');
-    callServer('apiSubmitQuiz', getToken(), s.quiz.id, s.attemptId, s.answers).then(function (r) {
+    callServer('apiSubmitQuiz', getToken(), s.quiz.id, s.attemptId, originalAnswers(s)).then(function (r) {
       if (handleExpired(r)) return;
       if (!r.ok && r.code === 'QUIZ_UNAVAILABLE') {
         // હવે ક્યારેય સ્વીકારાશે નહીં (ક્વિઝ બંધ/બદલાઈ): જૂના જવાબો રાખવાનો અર્થ નથી.
@@ -864,6 +877,19 @@
       navReplace('home');
       renderResult(r.result);
     });
+  }
+
+  // વિકલ્પો jumble હોય (બીજો પ્રયત્ન) તો દેખાતું સ્થાન → મૂળ વિકલ્પ; સર્વર મૂળ ક્રમથી ગુણ ગણે છે.
+  function originalAnswers(s) {
+    return s.answers.map(function (a, i) {
+      var order = s.questions[i].order;
+      return a === null || !order ? a : order[a];
+    });
+  }
+
+  // પરિણામમાં મૂળ index આવે છે; બાળકે જોયેલા ક્રમનું સ્થાન.
+  function shownIndex(q, i) {
+    return i === null || i === undefined || !q.order ? i : q.order.indexOf(i);
   }
 
   function showSubmitError(message) {
@@ -898,8 +924,8 @@
       html += '<div class="review-card ' + (rv.ok ? 'ok' : 'bad') + '">' +
         '<div class="review-mark">' + ms(rv.ok ? 'check_circle' : 'cancel') + 'પ્રશ્ન ' + rv.n + '</div>' +
         '<div class="q-html">' + q.html + '</div>' +
-        '<p>તમારો જવાબ: <b>' + optionText(q, rv.chosen) + '</b></p>' +
-        (rv.ok ? '' : '<p>સાચો જવાબ: <b>' + optionText(q, rv.correct) + '</b></p>' +
+        '<p>તમારો જવાબ: <b>' + optionText(q, shownIndex(q, rv.chosen)) + '</b></p>' +
+        (rv.ok ? '' : '<p>સાચો જવાબ: <b>' + optionText(q, shownIndex(q, rv.correct)) + '</b></p>' +
           (rv.explanation.length ? '<div class="explain">' + ms('lightbulb') + '<div><b>સમજૂતી</b><ul>' +
             rv.explanation.map(function (e) { return '<li>' + escapeHtml(e) + '</li>'; }).join('') + '</ul></div></div>' : '')) +
         '</div>';
@@ -1071,8 +1097,9 @@
         if (r.ok && r.status === 'added') { added++; images += r.images || 0; log('ok', 'check_circle', r.quizId + ' · ' + label + ' ઉમેર્યું'); }
         else if (r.ok) {
           skipped++;
-          log(r.repaired ? 'ok' : 'skip', r.repaired ? 'build' : 'remove_done', r.quizId + ' · ' + label + ' પહેલેથી છે' +
-            (r.repaired ? ' (' + r.repaired + ' ખાના સુધાર્યાં)' : ''));
+          var fixed = r.repaired || r.lo;
+          log(fixed ? 'ok' : 'skip', fixed ? 'build' : 'remove_done', r.quizId + ' · ' + label + ' પહેલેથી છે' +
+            (r.repaired ? ' (' + r.repaired + ' ખાના સુધાર્યાં)' : '') + (r.lo ? ' (' + r.lo + ' LO કોડ ભર્યા)' : ''));
         }
         else { failed++; log('err', 'error', label + ': ' + r.message); }
         next(i + 1);
@@ -1181,7 +1208,7 @@
   }
 
   function loRowsForExcel(d) {
-    return [['LO કોડ', 'પ્રશ્નો', 'સાચાનો %']].concat((d.lo || []).map(function (l) { return [l.lo, l.n, blank(l.pct)]; }));
+    return [['LO કોડ', 'LO', 'પ્રશ્નો', 'સાચાનો %']].concat((d.lo || []).map(function (l) { return [l.lo, l.name || '', l.n, blank(l.pct)]; }));
   }
 
   function statusRowsForExcel(r) {
@@ -1779,6 +1806,7 @@
         kpi('how_to_reg', d.filters.quizId ? 'ક્વિઝ આપનાર' : 'ક્વિઝ આપનાર બાળકો', c.participants) +
         kpi('percent', 'ભાગીદારી', fmtPct(c.participation)) +
         kpi('grade', 'સરેરાશ ગુણ', fmtPct(c.avg)) +
+        kpi('repeat', 'કુલ પ્રયત્નો (ફરી આપેલા સાથે)', c.attempts) +
       '</div>';
 
     if (!c.participants) {
@@ -1874,7 +1902,7 @@
   function loCards(d) {
     if (!d.lo || !d.lo.length || !d.cards.participants) return '';
     return '<div class="admin-card"><h2>' + dm('school') + 'LO વિશ્લેષણ</h2>' + d.lo.map(function (l) {
-      return '<div class="brow"><span>' + escapeHtml(l.lo) + ' <small class="muted">(' + l.n + ' પ્રશ્ન)</small></span>' + bar(l.pct) + '<b>' + fmtPct(l.pct) + '</b></div>';
+      return '<div class="brow"><span>' + escapeHtml(l.lo) + (l.name ? ' <small>' + escapeHtml(l.name) + '</small>' : '') + ' <small class="muted">(' + l.n + ' પ્રશ્ન)</small></span>' + bar(l.pct) + '<b>' + fmtPct(l.pct) + '</b></div>';
     }).join('') + '</div>';
   }
 
@@ -1909,11 +1937,11 @@
             '<div class="chips">' + [['all', 'બધા'], ['આપી', 'આપી'], ['બાકી', 'બાકી']].map(function (o) {
               return '<button type="button" class="chip' + (dash.statusFilter === o[0] ? ' on' : '') + '" data-sf="' + o[0] + '">' + o[1] + '</button>';
             }).join('') + '</div>' +
-            '<div class="table-wrap"><table class="summary-table"><thead><tr><th>રોલ</th><th>નામ</th><th>સ્થિતિ</th><th>પહેલો / શ્રેષ્ઠ</th></tr></thead><tbody>' +
+            '<div class="table-wrap"><table class="summary-table"><thead><tr><th>રોલ</th><th>નામ</th><th>સ્થિતિ</th><th>પહેલો / શ્રેષ્ઠ</th><th>પ્રયત્નો</th></tr></thead><tbody>' +
             shown.map(function (s) {
               var doneRow = s.status === 'આપી';
               return '<tr><td>' + s.roll + '</td><td>' + escapeHtml(s.name) + '</td><td class="' + (doneRow ? 'st-done' : 'st-pending') + '">' +
-                dm(doneRow ? 'check_circle' : 'pending') + s.status + '</td><td>' + (doneRow ? s.first + ' / ' + s.best + ' (' + s.total + ')' : '—') + '</td></tr>';
+                dm(doneRow ? 'check_circle' : 'pending') + s.status + '</td><td>' + (doneRow ? s.first + ' / ' + s.best + ' (' + s.total + ')' : '—') + '</td><td>' + (s.attempts || 0) + '</td></tr>';
             }).join('') + '</tbody></table></div>'
           : '<p class="hint">આ ધોરણનાં બાળકો યાદીમાં નથી.</p>') +
       '</div>';
@@ -2649,10 +2677,10 @@
           : '<div class="ov-note">' + dm('info') + '<span>આ બાળકે આપેલી ક્વિઝના પ્રશ્નોની ક્ષમતા હજુ નોંધાઈ નથી. DIET <b>ક્ષમતાઓ</b> Sheet ભરે પછી અહીં દેખાશે.</span></div>') +
       '</section>' +
 
-      '<section class="admin-card">' + cardHead('પ્રયત્નોનો ઇતિહાસ', d.history.length + ' પ્રયત્નો', 'નવો પ્રયત્ન ઉપર') +
+      '<section class="admin-card">' + cardHead('પ્રયત્નોનો ઇતિહાસ', d.history.length + ' પ્રયત્નો', 'નવો પ્રયત્ન ઉપર · બીજા પ્રયત્નથી વિકલ્પોનો ક્રમ બદલાય છે') +
         '<div class="table-wrap roster-wrap"><table class="summary-table"><thead><tr><th>સમય</th><th>ક્વિઝ</th><th>પ્રયત્ન</th><th>ગુણ</th></tr></thead><tbody>' +
         d.history.map(function (h) {
-          return '<tr><td>' + escapeHtml(h.t) + '</td><td>' + escapeHtml(h.title) + '</td><td>' + h.no + '</td><td>' + h.score + ' / ' + h.total + '</td></tr>';
+          return '<tr><td>' + escapeHtml(h.t) + '</td><td>' + escapeHtml(h.title) + '</td><td>' + h.no + (h.no > 1 ? ' <small class="muted">(વિકલ્પ jumble)</small>' : '') + '</td><td>' + h.score + ' / ' + h.total + '</td></tr>';
         }).join('') + '</tbody></table></div></section>';
     dashRoot().innerHTML = html;
     bindReport();
