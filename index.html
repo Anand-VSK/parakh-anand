@@ -69,7 +69,7 @@
   .theme-official .page { max-width: 72rem; }
 
   .brand { text-align: center; padding: 20px 16px 16px; }
-  /* લોગીન પર સ્વાગત કાર્ડ (e NAS પ્રેક્ટિસ) */
+  /* લોગીન પર સ્વાગત કાર્ડ (e PARAKH પ્રેક્ટિસ) */
   .brand-card { max-width: 32rem; margin: 0 auto; padding: 22px 18px 20px; border-radius: 28px; text-align: center;
     background: linear-gradient(135deg, rgba(49,46,129,.55), rgba(126,34,206,.45)); border: 1px solid rgba(255,255,255,.22);
     box-shadow: 0 18px 40px rgba(0,0,0,.3); }
@@ -161,6 +161,8 @@
   .quiz-card.done { background: rgba(34,197,94,.18); border-color: rgba(134,239,172,.6); }
   .quiz-card.locked { opacity: .55; cursor: not-allowed; background: rgba(15,23,42,.35); }
   .quiz-card.locked:active { transform: none; }
+  .pass-note { display: flex; gap: 6px; align-items: center; justify-content: center; font-weight: 700; color: #fde68a; margin-top: 6px; }
+  .pass-note.ok { color: #bbf7d0; }
   .shuffle-note { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px;
     background: rgba(250,204,21,.18); border: 1px solid rgba(253,224,71,.5); font-size: .9rem; }
   .quiz-set { font-size: 1.2rem; font-weight: 800; }
@@ -551,7 +553,7 @@
   <!-- હેડર (દરેક સ્ક્રીન પર) -->
   <header id="brand" class="brand">
     <div class="brand-card">
-      <span class="brand-pill"><span class="ms">auto_awesome</span>e NAS પ્રેક્ટિસ<span class="ms">auto_awesome</span></span>
+      <span class="brand-pill"><span class="ms">auto_awesome</span>e PARAKH પ્રેક્ટિસ<span class="ms">auto_awesome</span></span>
       <h1 class="brand-l1">જિલ્લા શિક્ષણ સમિતિ - આણંદ</h1>
       <p class="brand-l2">જિલ્લા શિક્ષણ અને તાલીમ ભવન - આણંદ</p>
       <p class="brand-l3">આપનું હાર્દિક સ્વાગત કરે છે! <span class="ms">celebration</span></p>
@@ -609,7 +611,7 @@
             <label class="field-label" for="of-id"><span class="ms">badge</span>લોગીન ID</label>
             <input id="of-id" class="field" autocomplete="username" autocapitalize="characters"
                    placeholder="લોગીન ID લખો">
-            <p class="hint">શાળા: ડાયસ કોડ · CRC: CRC-કોડ · BRC: BRC-તાલુકો</p>
+            <p class="hint">શાળા: ડાયસ કોડ · CRC: CRC-કોડ · BRC: BRC-તાલુકો · TPEO: TPEO-તાલુકો</p>
           </div>
           <div>
             <label class="field-label" for="of-pw"><span class="ms">lock</span>પાસવર્ડ</label>
@@ -751,11 +753,11 @@
           '<div class="quiz-grid">';
         groups[subject].forEach(function (q) {
           var done = q.attempts > 0;
-          // પહેલાંનો સેટ બાકી હોય તો આ સેટ બંધ (ક્રમમાં જ ખૂલે).
+          // પહેલાંના સેટમાં પાસ ગુણ (7+) ન હોય તો આ સેટ બંધ (ક્રમમાં જ ખૂલે).
           if (q.locked) {
             html += '<button type="button" class="quiz-card locked" disabled>' +
               '<span class="quiz-set">સેટ ' + q.setNo + '</span>' +
-              '<span class="quiz-status">' + ms('lock') + 'પહેલાં સેટ ' + q.needSet + ' આપો</span></button>';
+              '<span class="quiz-status">' + ms('lock') + 'સેટ ' + q.needSet + ' માં ' + (r.passScore || 7) + '+ ગુણ મેળવો</span></button>';
             return;
           }
           html += '<button type="button" class="quiz-card' + (done ? ' done' : '') + '" data-quiz="' + escapeHtml(q.id) + '">' +
@@ -918,7 +920,12 @@
     var s = quizState;
     var html = '<div class="glass-card result-head">' + ms('emoji_events', 'icon-hero') +
       '<h2>તમારો સ્કોર ' + result.score + ' / ' + result.total + '</h2>' +
-      '<p>' + escapeHtml(s.quiz.title) + ' · પ્રયત્ન ' + result.attempt + '</p></div>';
+      '<p>' + escapeHtml(s.quiz.title) + ' · પ્રયત્ન ' + result.attempt + '</p>' +
+      (result.passScore
+        ? (result.score >= result.passScore
+          ? '<p class="pass-note ok">' + ms('lock_open') + 'શાબાશ! આ સેટ પાસ — આગલો સેટ આપી શકો.</p>'
+          : '<p class="pass-note">' + ms('lock') + 'આગલો સેટ ખોલવા ' + result.passScore + ' કે વધુ ગુણ જોઈએ — ફરી પ્રયત્ન કરો.</p>')
+        : '') + '</div>';
     result.review.forEach(function (rv, i) {
       var q = s.questions[i];
       html += '<div class="review-card ' + (rv.ok ? 'ok' : 'bad') + '">' +
@@ -981,7 +988,7 @@
   function renderImportCard(container) {
     importState = { std: null, bank: null };
     container.innerHTML =
-        '<p class="hint mb-4">જૂની e NAS પ્રેક્ટિસ HTML ફાઇલ પસંદ કરો. દરેક સેટ એક ક્વિઝ બનશે અને ચિત્રો Drive માં સચવાશે. એ જ ફાઇલ ફરી આયાત કરો તો કંઈ બે વાર નહીં ઉમેરાય.</p>' +
+        '<p class="hint mb-4">જૂની e PARAKH પ્રેક્ટિસ HTML ફાઇલ પસંદ કરો. દરેક સેટ એક ક્વિઝ બનશે અને ચિત્રો Drive માં સચવાશે. એ જ ફાઇલ ફરી આયાત કરો તો કંઈ બે વાર નહીં ઉમેરાય.</p>' +
         '<div class="space-y-4">' +
           '<div><span class="field-label">' + dietMs('menu_book') + 'ધોરણ</span>' +
             '<div class="seg"><button type="button" data-istd="5">ધોરણ 5</button><button type="button" data-istd="8">ધોરણ 8</button></div></div>' +
@@ -2103,7 +2110,7 @@
     var stdText = f.std ? 'ધોરણ ' + f.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
     var html =
       '<section class="ov-hero">' +
-        '<div class="ov-hero-text"><span class="ov-pill">' + dm('insights') + (demo ? 'ડેમો · e-NAS પરિણામ' : 'પરખ પરિણામ') + '</span>' +
+        '<div class="ov-hero-text"><span class="ov-pill">' + dm('insights') + (demo ? 'ડેમો · e PARAKH પરિણામ' : 'પરખ પરિણામ') + '</span>' +
           '<h1>પરિણામ ઝલક</h1><p>' + (school ? escapeHtml(d.schoolName || '') + ' · ' : '') + stdText + 'ના વિદ્યાર્થીઓ માટે · અભ્યાસથી પ્રગતિ તરફ</p></div>' +
         '<div class="ov-hero-side">' +
           (d.demoAllowed ? '<div class="ov-source">' + [['parakh', 'પરખ પરિણામ'], ['demo', 'ડેમો ડેટા']].map(function (s) {
@@ -2714,7 +2721,7 @@
   // પરખ – આણંદ : client સ્ક્રીનો (લોગીન, પાસવર્ડ બદલો, હોમ)
   var TOKEN_KEY = 'parakh_token';
   var ROLE_COLORS = {
-    DDO: '#b91c1c', DPEO: '#b91c1c', DIET: '#7c3aed', BRC: '#0369a1',
+    DDO: '#b91c1c', DPEO: '#b91c1c', DIET: '#7c3aed', TPEO: '#1d4ed8', BRC: '#0369a1',
     CRC: '#0f766e', SCHOOL: '#c2410c', STUDENT: '#db2777'
   };
   var state = { session: null, std: null, token: null };
@@ -2902,7 +2909,7 @@
   // --- હોમ ---
 
   function scopeLine(s) {
-    if (s.role === 'BRC') return 'તાલુકો: ' + s.taluka;
+    if (s.role === 'TPEO' || s.role === 'BRC') return 'તાલુકો: ' + s.taluka;
     if (s.role === 'CRC') return 'CRC: ' + s.crc + (s.taluka ? ' · ' + s.taluka : '');
     if (s.role === 'SCHOOL') return s.schoolName || s.name;
     if (s.role === 'STUDENT') return s.schoolName + ' · ધોરણ ' + s.std + ' · રોલ ' + s.roll;
