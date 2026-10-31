@@ -161,6 +161,9 @@
   .quiz-card.done { background: rgba(34,197,94,.18); border-color: rgba(134,239,172,.6); }
   .quiz-card.locked { opacity: .55; cursor: not-allowed; background: rgba(15,23,42,.35); }
   .quiz-card.locked:active { transform: none; }
+  .roll-change { display: grid; grid-template-columns: 1fr 140px auto; gap: 8px; align-items: center; }
+  .roll-change .btn-primary { width: auto; margin: 0; }
+  @media (max-width: 560px) { .roll-change { grid-template-columns: 1fr; } }
   .pass-note { display: flex; gap: 6px; align-items: center; justify-content: center; font-weight: 700; color: #fde68a; margin-top: 6px; }
   .pass-note.ok { color: #bbf7d0; }
   .shuffle-note { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px;
@@ -460,7 +463,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiStudentReport"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiStudentReport"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -2514,9 +2517,23 @@
           : '<p class="hint">ધોરણ ' + roster.std + 'નાં બાળકો હજુ ઉમેર્યાં નથી. નીચે યાદી paste કરો.</p>') +
         (off ? '<p class="hint">' + off + ' બાળક બંધ કરેલાં છે (જૂનું પરિણામ સચવાયેલું છે).</p>' : '') +
       '</div>' +
+      (active.length
+        ? '<div class="admin-card"><h2>' + dm('swap_vert') + 'રોલ નંબર બદલો</h2>' +
+            '<p class="hint">બાળકનો રોલ નંબર બદલવા અહીંથી જ બદલો — તેનું જૂનું પરિણામ પણ નવા રોલ નંબર સાથે જશે. ' +
+              'નવો રોલ નંબર બીજા બાળકનો હોય તો બંનેના રોલ નંબર અદલાબદલી થશે.</p>' +
+            '<div class="roll-change mt-3">' +
+              '<select class="field" id="roll-from">' + active.map(function (s) {
+                return '<option value="' + s.roll + '">' + s.roll + ' · ' + escapeHtml(s.name) + '</option>';
+              }).join('') + '</select>' +
+              '<input class="field" id="roll-to" inputmode="numeric" maxlength="3" placeholder="નવો રોલ નંબર">' +
+              '<button type="button" class="btn-primary" id="roll-save">' + dm('swap_vert') + 'બદલો</button>' +
+            '</div>' +
+          '</div>'
+        : '') +
       '<div class="admin-card"><h2>' + dm('content_paste') + 'ધોરણ ' + roster.std + 'ની યાદી paste કરો</h2>' +
         '<p class="hint">Excel / Google Sheet માં <b>રોલ નંબર</b> અને <b>નામ</b> ની બે કૉલમ (ઇચ્છો તો ત્રીજી <b>જાતિ</b>: કુમાર / કન્યા) પસંદ કરી Copy કરો અને અહીં Paste કરો. ' +
-          'ધોરણની <b>આખી</b> યાદી paste કરો: યાદીમાં ન હોય એવાં બાળકો બંધ થશે.</p>' +
+          'ધોરણની <b>આખી</b> યાદી paste કરો: યાદીમાં ન હોય એવાં બાળકો બંધ થશે. ' +
+          '(અહીં રોલ નંબર બદલશો તો જૂનું પરિણામ સાથે નહીં જાય — એ માટે ઉપરનું "રોલ નંબર બદલો" વાપરો.)</p>' +
         '<textarea class="field roster-paste" id="roster-text" rows="8" placeholder="1&#9;રમેશ પટેલ&#9;કુમાર&#10;2&#9;હેતલ પરમાર&#9;કન્યા">' + escapeHtml(roster.pasted || '') + '</textarea>' +
         '<div id="roster-preview"></div>' +
       '</div>';
@@ -2528,6 +2545,7 @@
       b.addEventListener('click', function () { openStudentReport(b.getAttribute('data-student'), function () { markHomeTab('roster'); renderRoster(); }); });
     });
     $('roster-text').addEventListener('input', function () { roster.pasted = this.value; drawRosterPreview(); });
+    if ($('roll-save')) $('roll-save').addEventListener('click', function () { changeRoll(active, this); });
     dashRoot().querySelectorAll('[data-xl="roster"]').forEach(function (b) {
       b.addEventListener('click', function () {
         var rows = [['ધોરણ', 'રોલ નંબર', 'નામ', 'જાતિ']].concat(roster.data.students.filter(function (s) { return s.active; }).map(function (s) {
@@ -2563,6 +2581,32 @@
     $('roster-save').addEventListener('click', function () {
       if (plan.removed.length && !window.confirm(plan.removed.length + ' બાળક યાદીમાં નથી, તે બંધ થશે. સાચવવું છે?')) return;
       saveRoster(parsed.rows, this);
+    });
+  }
+
+  function changeRoll(active, btn) {
+    var from = Number($('roll-from').value);
+    var to = Number(rosterDigits($('roll-to').value));
+    if (!to || to < 1 || to > 999 || String(to) !== rosterDigits($('roll-to').value)) { window.alert('નવો રોલ નંબર 1 થી 999 વચ્ચેનો અંક લખો.'); return; }
+    if (to === from) { window.alert('નવો રોલ નંબર જૂના કરતાં અલગ હોવો જોઈએ.'); return; }
+    var kid = active.filter(function (s) { return s.roll === from; })[0];
+    var other = active.filter(function (s) { return s.roll === to; })[0];
+    var question = other
+      ? kid.name + ' (રોલ ' + from + ') અને ' + other.name + ' (રોલ ' + to + ') ના રોલ નંબર અદલાબદલી કરવા છે?'
+      : kid.name + ' નો રોલ નંબર ' + from + ' થી ' + to + ' કરવો છે?';
+    if (!window.confirm(question)) return;
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin') + 'બદલે છે...';
+    callServer('apiChangeRoll', getToken(), roster.std, from, to).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) {
+        btn.disabled = false;
+        btn.innerHTML = dm('swap_vert') + 'બદલો';
+        window.alert(r.message || 'બદલી શકાયું નહીં.');
+        return;
+      }
+      window.alert((r.swapped ? 'રોલ નંબર અદલાબદલી થયા.' : 'રોલ નંબર બદલાયો.') + ' ' + r.results + ' પરિણામ નવા રોલ નંબર સાથે જોડાયાં.');
+      renderRoster();
     });
   }
 
