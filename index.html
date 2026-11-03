@@ -201,15 +201,15 @@
     .roster-edit-form { grid-template-columns: 1fr; }
   }
   .fln-pending { color: #b45309; }
-  /* ડેશબોર્ડ: ફિલ્ટર પછી "પરિણામ બતાવો"; ત્યાં સુધી જૂના આંકડા ઝાંખા. */
-  .ov-apply { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-top: 14px; padding: 10px 12px;
-    border-radius: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; }
-  .ov-apply span { display: flex; align-items: center; gap: 6px; font-weight: 600; }
-  .ov-apply .btn-primary { width: auto; margin: 0; padding: 0 22px; }
-  .ov-apply.on { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
-  .ov-apply.on .btn-primary { box-shadow: 0 0 0 4px rgba(249,115,22,.25); }
-  @media (max-width: 560px) { .ov-apply .btn-primary { flex: 1 1 100%; } }
-  .ov-stale { opacity: .45; filter: grayscale(.6); pointer-events: none; user-select: none; transition: opacity .2s; }
+  .dup-note { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; padding: 12px 14px; border-radius: 14px;
+    background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; line-height: 1.55; }
+  .roster-table tr.dup-row td { background: #fef2f2; }
+  .dup-tag { color: #dc2626; margin-left: 4px; vertical-align: middle; }
+  .dup-tag .ms { font-size: 1.05em; margin: 0; }
+  .add-open { width: 100%; margin-top: 12px; border-style: dashed; color: #4338ca; }
+  .add-box { margin-top: 12px; padding: 14px; border-radius: 14px; background: #eef2ff; border: 1px solid #c7d2fe; }
+  .add-box h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 1.05rem; color: #3730a3; }
+  .add-box .add-fln { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 8px; color: #166534; }
   .pass-note { display: flex; gap: 6px; align-items: center; justify-content: center; font-weight: 700; color: #fde68a; margin-top: 6px; }
   .pass-note.ok { color: #bbf7d0; }
   .shuffle-note { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px;
@@ -412,7 +412,6 @@
   .report-xl { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
   .report-xl .ms { color: #fff; }
   .roster-wrap { max-height: 360px; overflow-y: auto; margin-top: 8px; }
-  .roster-paste { min-height: 160px; font-size: 1rem; line-height: 1.5; resize: vertical; }
   .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
   .ov-search { min-height: 44px; font-size: .98rem; width: 260px; max-width: 100%; }
   .ov-comp-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
@@ -509,7 +508,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiUpdateStudents","apiStudentReport"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiUpdateStudents","apiAddStudent","apiStudentReport"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -1820,7 +1819,6 @@
 
   function renderDashboard(params, fromHistory) {
     dash.params = params || {};
-    dash.pending = null;
     stopOverviewTimer();
     markHomeTab('dash');
     if (!fromHistory) navPush('dash', dash.params);
@@ -1828,9 +1826,7 @@
     var seq = dash.seq = (dash.seq || 0) + 1;
     dash.statusFilter = 'all';
     dashRoot().innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">ડેશબોર્ડ તૈયાર થઈ રહ્યું છે...</p></div>';
-    // પહેલી વાર (કોઈ ફિલ્ટર/એકમ નહીં): ફક્ત ફિલ્ટરની યાદીઓ — આંકડા "પરિણામ બતાવો" પછી.
-    var ask = Object.keys(dash.params).length ? dash.params : { optionsOnly: true };
-    callServer('apiDashboard', getToken(), ask).then(function (r) {
+    callServer('apiDashboard', getToken(), dash.params).then(function (r) {
       if (seq !== dash.seq || !$('tab-body') && !$('app-home')) return;
       if (handleExpired(r)) return;
       if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
@@ -1839,29 +1835,7 @@
     });
   }
 
-  // ફિલ્ટર બદલાય ત્યારે ફક્ત યાદ રાખો; "પરિણામ બતાવો" દબાવે ત્યારે જ સર્વર પર.
-  var DASH_FILTER_KEYS = ['std', 'subject', 'type', 'quizId'];
-
-  function pendDash(changes) {
-    var base = dash.pending || dash.data.filters;
-    var p = {};
-    DASH_FILTER_KEYS.forEach(function (k) { p[k] = base[k] === undefined || base[k] === null ? '' : String(base[k]); });
-    Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
-    var same = DASH_FILTER_KEYS.every(function (k) { return String(p[k] || '') === String(dash.data.filters[k] || ''); });
-    dash.pending = same ? null : p;
-    drawDashboard();
-  }
-
-  function applyDash() {
-    var chosen = dash.pending || (dash.data && dash.data.waiting ? dash.data.filters : null);
-    if (!chosen) return;
-    var ch = { level: dash.data.unit.level, id: dash.data.unit.id };
-    DASH_FILTER_KEYS.forEach(function (k) { ch[k] = chosen[k] === null || chosen[k] === undefined ? '' : String(chosen[k]); });
-    go(ch);
-  }
-
   function go(changes) {
-    dash.pending = null;
     var p = {};
     Object.keys(dash.params).forEach(function (k) { p[k] = dash.params[k]; });
     Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
@@ -1871,14 +1845,8 @@
   function drawDashboard() {
     var d = dash.data;
     var c = d.cards;
-    var stale = !!dash.pending;
-    var waiting = !!d.waiting;
-    var f = dash.pending || d.filters; // ડ્રોપડાઉનમાં દેખાતી પસંદગી
-    var all = d.filters.allQuizzes || d.filters.quizzes;
-    var byStd = all.filter(function (q) { return !f.std || String(q.std) === String(f.std); });
     var subjects = [];
-    byStd.forEach(function (q) { if (subjects.indexOf(q.subject) === -1) subjects.push(q.subject); });
-    var quizList = byStd.filter(function (q) { return !f.subject || q.subject === f.subject; });
+    d.filters.quizzes.forEach(function (q) { if (subjects.indexOf(q.subject) === -1) subjects.push(q.subject); });
     var html =
       '<div class="crumbs">' + d.path.map(function (p, i) {
         var last = i === d.path.length - 1;
@@ -1887,30 +1855,18 @@
       }).join('') + '</div>' +
       '<div class="dash-filters">' +
         '<div class="chips">' + [['', 'બધાં ધોરણ'], ['5', 'ધોરણ 5'], ['8', 'ધોરણ 8']].map(function (o) {
-          return '<button type="button" class="chip' + (String(f.std || '') === o[0] ? ' on' : '') + '" data-std-f="' + o[0] + '">' + o[1] + '</button>';
+          return '<button type="button" class="chip' + (String(d.filters.std || '') === o[0] ? ' on' : '') + '" data-std-f="' + o[0] + '">' + o[1] + '</button>';
         }).join('') + '</div>' +
         '<select class="field" id="f-subject"><option value="">બધા વિષય</option>' + subjects.map(function (s) {
-          return '<option' + (s === f.subject ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
+          return '<option' + (s === d.filters.subject ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
         }).join('') + '</select>' +
         ((d.filters.types || []).length ? '<select class="field" id="f-type"><option value="">બધા પ્રકારની શાળા</option>' + d.filters.types.map(function (t) {
-          return '<option' + (t === f.type ? ' selected' : '') + '>' + escapeHtml(t) + '</option>';
+          return '<option' + (t === d.filters.type ? ' selected' : '') + '>' + escapeHtml(t) + '</option>';
         }).join('') + '</select>' : '') +
-        '<select class="field" id="f-quiz"><option value="">બધી ક્વિઝ</option>' + quizList.map(function (q) {
-          return '<option value="' + escapeHtml(q.id) + '"' + (q.id === f.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
+        '<select class="field" id="f-quiz"><option value="">બધી ક્વિઝ</option>' + d.filters.quizzes.map(function (q) {
+          return '<option value="' + escapeHtml(q.id) + '"' + (q.id === d.filters.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
         }).join('') + '</select>' +
       '</div>' +
-      '<div class="ov-apply' + (stale || waiting ? ' on' : '') + '">' +
-        (stale ? '<span>' + dm('info') + 'ફિલ્ટર બદલાયા છે — નવું પરિણામ જોવા બટન દબાવો.</span>'
-          : waiting ? '<span>' + dm('info') + 'ફિલ્ટર પસંદ કરો (ઇચ્છો તો બધું ખાલી રાખો) અને બટન દબાવો.</span>'
-          : '<span class="muted">ફિલ્ટર પસંદ કરી બટન દબાવો.</span>') +
-        '<button type="button" class="btn-primary" id="dash-apply"' + (stale || waiting ? '' : ' disabled') + '>' + dm('play_arrow') + 'પરિણામ બતાવો</button>' +
-      '</div>' +
-      '<div id="dash-results"' + (stale ? ' class="ov-stale" aria-hidden="true"' : '') + '>';
-    if (waiting) {
-      html += '<div class="admin-card text-center ov-wait">' + dm('touch_app', 'icon-hero') +
-        '<p>ફિલ્ટર પસંદ કરી <b>"પરિણામ બતાવો"</b> દબાવો — પછી જ આંકડા દેખાશે.</p></div>';
-    } else {
-    html +=
       '<div class="xl-bar"><button type="button" class="btn-ghost" data-xl="results">' + dm('download') + 'પૂરું પરિણામ (Excel)</button></div>' +
       '<div class="kpis">' +
         kpi('groups', 'કુલ બાળકો', c.enrolled) +
@@ -1931,20 +1887,17 @@
     }
     html += childrenTable(d) + rankingCards(d) + questionCards(d) + loCards(d);
     if (d.unit.level === 'school') html += '<div id="school-box"></div>';
-    }
-    html += '</div>';
     dashRoot().innerHTML = html;
-    $('dash-apply').addEventListener('click', applyDash);
 
     dashRoot().querySelectorAll('[data-crumb]').forEach(function (b) {
       b.addEventListener('click', function () { var p = d.path[Number(b.getAttribute('data-crumb'))]; go({ level: p.level, id: p.id }); });
     });
     dashRoot().querySelectorAll('[data-std-f]').forEach(function (b) {
-      b.addEventListener('click', function () { pendDash({ std: b.getAttribute('data-std-f'), subject: '', quizId: '' }); });
+      b.addEventListener('click', function () { go({ std: b.getAttribute('data-std-f'), subject: '', quizId: '' }); });
     });
-    $('f-subject').addEventListener('change', function () { pendDash({ subject: this.value, quizId: '' }); });
-    $('f-quiz').addEventListener('change', function () { pendDash({ quizId: this.value }); });
-    if ($('f-type')) $('f-type').addEventListener('change', function () { pendDash({ type: this.value }); });
+    $('f-subject').addEventListener('change', function () { go({ subject: this.value, quizId: '' }); });
+    $('f-quiz').addEventListener('change', function () { go({ quizId: this.value }); });
+    if ($('f-type')) $('f-type').addEventListener('change', function () { go({ type: this.value }); });
     dashRoot().querySelectorAll('[data-drill]').forEach(function (b) {
       b.addEventListener('click', function () { go({ level: b.getAttribute('data-level'), id: b.getAttribute('data-drill') }); });
     });
@@ -1958,7 +1911,7 @@
       b.addEventListener('click', function () { dash.sortKey = b.getAttribute('data-sort'); drawDashboard(); });
     });
     bindXl(dashRoot());
-    if (d.unit.level === 'school' && !waiting) loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
+    if (d.unit.level === 'school') loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
   }
 
   function kpi(icon, label, value) {
@@ -2140,9 +2093,7 @@
     ['low', '0 થી 3 ગુણ (વધુ મહેનત જરૂરી)'], ['perfect', 'પૂર્ણ 10 / 10']];
   var SUBJECT_COLORS = ['#6d5dfc', '#14b8a6', '#f5b14c', '#ec6fa6', '#38bdf8', '#84cc16'];
   var REFRESH_CHOICES = [[0, 'આપમેળે અપડેટ બંધ'], [30, 'દર 30 સેકન્ડે અપડેટ'], [60, 'દર 1 મિનિટે અપડેટ'], [300, 'દર 5 મિનિટે અપડેટ']];
-  // pending = પસંદ કરેલા પણ હજુ લાગુ ન કરેલા ફિલ્ટર: "પરિણામ બતાવો" દબાવે ત્યારે જ સર્વર પર જાય.
-  var overview = { params: {}, data: null, timer: null, every: 0, schoolRows: 50, busy: false, pending: null };
-  var OV_FILTER_KEYS = ['type', 'std', 'taluka', 'school', 'subject', 'set', 'from', 'to', 'band'];
+  var overview = { params: {}, data: null, timer: null, every: 0, schoolRows: 50, busy: false };
 
   function ovNum(v) { return v === null || v === undefined ? '—' : Number(v).toLocaleString('en-IN'); }
 
@@ -2155,18 +2106,14 @@
     stopOverviewTimer();
     if (!overview.every) return;
     overview.timer = setInterval(function () {
-      // બીજી સ્ક્રીન પર ગયા / logout થયા: ઘડિયાળ બંધ. હજુ "પરિણામ બતાવો" દબાવ્યું ન હોય તો અપડેટ નહીં.
+      // બીજી સ્ક્રીન પર ગયા / logout થયા: ઘડિયાળ બંધ.
       if (!state.session || !$('ov-root')) { stopOverviewTimer(); return; }
-      if (overview.data && overview.data.waiting) return;
       loadOverview(true);
     }, overview.every * 1000);
   }
 
   function renderOverview(params, fromHistory) {
     overview.params = params || {};
-    overview.pending = null;
-    // પહેલી વાર (કોઈ ફિલ્ટર નહીં): ફક્ત ફિલ્ટરની યાદીઓ — આંકડા "પરિણામ બતાવો" પછી.
-    overview.firstOpen = !Object.keys(overview.params).length;
     overview.schoolRows = 50;
     markHomeTab('overview');
     dashRoot().innerHTML = '<div id="ov-root"><div class="admin-card text-center"><div class="spinner admin-spin"></div>' +
@@ -2180,29 +2127,6 @@
     Object.keys(overview.params).forEach(function (k) { p[k] = overview.params[k]; });
     Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
     overview.params = p;
-    overview.pending = null;
-    overview.schoolRows = 50;
-    loadOverview(false, true);
-  }
-
-  // ફિલ્ટર બદલાયું: ફક્ત યાદ રાખો (સર્વર પર નહીં). નીચેના આંકડા ઝાંખા, "પરિણામ બતાવો" ચમકે.
-  function pendOverview(changes) {
-    var p = {};
-    var base = overview.pending || overview.data.filters;
-    OV_FILTER_KEYS.forEach(function (k) { p[k] = base[k] === undefined || base[k] === null ? '' : base[k]; });
-    Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
-    var same = OV_FILTER_KEYS.every(function (k) { return String(p[k] || '') === String(overview.data.filters[k] || ''); });
-    overview.pending = same ? null : p;
-    drawOverview();
-  }
-
-  function applyOverview() {
-    var chosen = overview.pending || (overview.data && overview.data.waiting ? overview.data.filters : null);
-    if (!chosen) return;
-    var p = { source: overview.params.source };
-    OV_FILTER_KEYS.forEach(function (k) { if (chosen[k]) p[k] = chosen[k]; });
-    overview.params = p;
-    overview.pending = null;
     overview.schoolRows = 50;
     loadOverview(false, true);
   }
@@ -2213,7 +2137,6 @@
     var params = {};
     Object.keys(overview.params).forEach(function (k) { params[k] = overview.params[k]; });
     if (quiet) params.fresh = true;
-    if (overview.firstOpen) { params.optionsOnly = true; overview.firstOpen = false; }
     if ((quiet || keep) && $('ov-live')) { $('ov-live').classList.add('busy'); $('ov-live').lastChild.textContent = 'અપડેટ થઈ રહ્યું છે...'; }
     callServer('apiOverview', getToken(), params).then(function (r) {
       if (seq !== dash.seq || !$('ov-root')) return;
@@ -2239,15 +2162,12 @@
 
   function drawOverview() {
     var d = overview.data;
-    var f = overview.pending || d.filters; // ડ્રોપડાઉનમાં પસંદ કરેલું (લાગુ ન થયું હોય તો પણ)
-    var shown = d.filters;                // નીચેના આંકડા જેના છે
-    var stale = !!overview.pending;
-    var waiting = !!d.waiting;
+    var f = d.filters;
     var o = d.options;
     var c = d.cards;
     var demo = d.source === 'demo';
     var school = d.scope === 'school';
-    var stdText = shown.std ? 'ધોરણ ' + shown.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
+    var stdText = f.std ? 'ધોરણ ' + f.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
     var html =
       '<section class="ov-hero">' +
         '<div class="ov-hero-text"><span class="ov-pill">' + dm('insights') + (demo ? 'ડેમો · e PARAKH પરિણામ' : 'પરખ પરિણામ') + '</span>' +
@@ -2275,21 +2195,7 @@
           '<label class="ov-field"><span>તારીખ સુધી</span><input type="date" class="field" id="ov-to" value="' + escapeHtml(f.to) + '"></label>' +
           ovSelect('ov-band', 'વિદ્યાર્થીઓનું ક્ષમતાવાર પરિણામ', f.band, BAND_LABELS) +
         '</div>' +
-        '<div class="ov-apply' + (stale || waiting ? ' on' : '') + '">' +
-          (stale ? '<span>' + dm('info') + 'ફિલ્ટર બદલાયા છે — નવું પરિણામ જોવા બટન દબાવો.</span>'
-            : waiting ? '<span>' + dm('info') + 'ફિલ્ટર પસંદ કરો (ઇચ્છો તો બધું ખાલી રાખો) અને બટન દબાવો.</span>'
-            : '<span class="muted">ફિલ્ટર પસંદ કરી બટન દબાવો.</span>') +
-          '<button type="button" class="btn-primary" id="ov-apply"' + (stale || waiting ? '' : ' disabled') + '>' + dm('play_arrow') + 'પરિણામ બતાવો</button>' +
-        '</div>' +
       '</section>' +
-      '<div id="ov-results"' + (stale ? ' class="ov-stale" aria-hidden="true"' : '') + '>';
-    if (waiting) {
-      $('ov-root').innerHTML = html + '<div class="admin-card text-center ov-wait">' + dm('touch_app', 'icon-hero') +
-        '<p>ફિલ્ટર પસંદ કરી <b>"પરિણામ બતાવો"</b> દબાવો — પછી જ આંકડા અને ચાર્ટ દેખાશે.</p></div></div>';
-      bindOverview();
-      return;
-    }
-    html +=
 
       '<div class="ov-head"><div><h2>પરિણામોની એક નજર</h2><p class="muted">' + ovNum(c.attempts) + ' / ' + ovNum(d.total) + ' પ્રયત્નો દર્શાવ્યા છે</p></div>' +
         '<div class="ov-head-tools"><select class="field" id="ov-every">' + REFRESH_CHOICES.map(function (x) {
@@ -2322,7 +2228,6 @@
         competencyCard(d) +
         (school ? kidsCard(d) : schoolCard(d));
     }
-    html += '</div>';
     $('ov-root').innerHTML = html;
     bindOverview();
   }
@@ -2514,13 +2419,12 @@
         ch[pair[1]] = this.value;
         // તાલુકો બદલાય તો જૂની શાળા પસંદગી રદ.
         if (pair[1] === 'taluka' || pair[1] === 'std' || pair[1] === 'type') ch.school = '';
-        pendOverview(ch);
+        setOverview(ch);
       });
     });
-    $('ov-clear').addEventListener('click', function () { overview.params = { source: overview.params.source }; overview.pending = null; loadOverview(false, true); });
-    $('ov-apply').addEventListener('click', applyOverview);
-    if ($('ov-refresh')) $('ov-refresh').addEventListener('click', function () { loadOverview(true); });
-    if ($('ov-every')) $('ov-every').addEventListener('change', function () { overview.every = Number(this.value); startOverviewTimer(); });
+    $('ov-clear').addEventListener('click', function () { overview.params = { source: overview.params.source }; loadOverview(false, true); });
+    $('ov-refresh').addEventListener('click', function () { loadOverview(true); });
+    $('ov-every').addEventListener('change', function () { overview.every = Number(this.value); startOverviewTimer(); });
     root.querySelectorAll('[data-band]').forEach(function (b) {
       b.addEventListener('click', function () { setOverview({ band: overview.params.band === b.getAttribute('data-band') ? '' : b.getAttribute('data-band') }); });
     });
@@ -2576,61 +2480,11 @@
 </script>
 
   <script>
-  // પરખ – આણંદ : શાળા લોગીન — ધોરણ 5 / 8 નાં બાળકોની યાદી (Excel માંથી copy-paste).
-  var roster = { data: null, std: 5, pasted: null, editing: null, fln: {} };
-
-  function rosterGender(v) {
-    var t = String(v || '').trim().toLowerCase();
-    if (/^(કુમાર|છોકરો|ભાઈ|boy|male|m|b)$/.test(t)) return 'કુમાર';
-    if (/^(કન્યા|છોકરી|બેન|girl|female|f|g)$/.test(t)) return 'કન્યા';
-    return '';
-  }
+  // પરખ – આણંદ : શાળા લોગીન — ધોરણ 5 / 8 નાં બાળકોની યાદી (યાદી DIET એ આપી છે; શાળા સુધારે, ઉમેરે, કાઢે, FLN ✓ કરે).
+  var roster = { data: null, std: 5, editing: null, adding: false, fln: {} };
 
   function rosterDigits(v) {
     return String(v || '').replace(/[૦-૯]/g, function (ch) { return String(ch.charCodeAt(0) - 0x0AE6); }).replace(/\s+/g, '');
-  }
-
-  // Excel/Sheets ની copy (Tab વાળી) અથવા "1 રમેશ પટેલ" જેવી લીટીઓ → [{roll, name, gender, line}] + ભૂલો.
-  function parseRosterText(text) {
-    var rows = [];
-    var errors = [];
-    var seen = {};
-    parseTsv(String(text || '').replace(/\r\n?/g, '\n')).forEach(function (cells, i) {
-      cells = cells.map(function (c) { return String(c || '').trim(); });
-      if (!cells.join('')) return;
-      if (cells.length === 1) {
-        var m = cells[0].match(/^([0-9૦-૯]+)[\s,.)\-:]+(.+)$/);
-        cells = m ? [m[1], m[2]] : cells;
-      }
-      var roll = rosterDigits(cells[0]);
-      // પહેલી લીટી મથાળું હોય ("રોલ નંબર  નામ") તો છોડો.
-      if (!rows.length && !errors.length && !/^\d+$/.test(roll)) return;
-      var name = (cells[1] || '').replace(/\s+/g, ' ');
-      var line = i + 1;
-      if (!/^\d{1,3}$/.test(roll) || Number(roll) < 1) { errors.push({ line: line, message: 'રોલ નંબર અંકમાં હોવો જોઈએ (1 થી 999).' }); return; }
-      if (!name) { errors.push({ line: line, message: 'નામ ખાલી છે.' }); return; }
-      if (seen[Number(roll)]) { errors.push({ line: line, message: 'રોલ નંબર ' + Number(roll) + ' બે વાર છે.' }); return; }
-      seen[Number(roll)] = true;
-      rows.push({ roll: Number(roll), name: name, gender: rosterGender(cells[2]), line: line });
-    });
-    rows.sort(function (a, b) { return a.roll - b.roll; });
-    return { rows: rows, errors: errors };
-  }
-
-  // હાલની યાદી સાથે સરખામણી: નવા / બદલાશે / બંધ થશે.
-  function rosterPlan(current, rows) {
-    var byRoll = {};
-    current.forEach(function (s) { byRoll[s.roll] = s; });
-    var plan = { added: 0, updated: 0, removed: [] };
-    var keep = {};
-    rows.forEach(function (r) {
-      var s = byRoll[r.roll];
-      keep[r.roll] = true;
-      if (!s) plan.added++;
-      else if (s.name !== r.name || !s.active || (r.gender && r.gender !== s.gender)) plan.updated++;
-    });
-    current.forEach(function (s) { if (s.active && !keep[s.roll]) plan.removed.push(s); });
-    return plan;
   }
 
   function renderRoster() {
@@ -2643,7 +2497,6 @@
       if (handleExpired(r)) return;
       if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
       roster.data = r;
-      roster.pasted = null;
       pruneFlnDraft();
       drawRoster();
     });
@@ -2653,7 +2506,20 @@
     return roster.data.students.filter(function (s) { return s.std === std; });
   }
 
-  // સાચવ્યા વગરના FLN ✓ ફેરફાર (ધોરણવાર): {roll: true/false}. યાદી ફરી ખૂલે ત્યારે સાચવાયેલા ફેરફાર કાઢો.
+  // દરેક બાળકની ઓળખ = Sheet ની હરોળ (એક જ રોલ નંબર ભૂલથી બે બાળકોને અપાયો હોય તો પણ સાચું બાળક બદલાય).
+  function kidKey(s) {
+    return String(s.row || ('r' + s.roll));
+  }
+
+  // ધોરણમાં એક જ રોલ નંબરવાળાં ચાલુ બાળકો: {roll: [બાળકો]} (2 કે વધુ હોય એ જ).
+  function duplicateRolls(active) {
+    var by = {};
+    active.forEach(function (s) { (by[s.roll] = by[s.roll] || []).push(s); });
+    Object.keys(by).forEach(function (r) { if (by[r].length < 2) delete by[r]; });
+    return by;
+  }
+
+  // સાચવ્યા વગરના FLN ✓ ફેરફાર (ધોરણવાર): {બાળકની ઓળખ: true/false}. યાદી ફરી ખૂલે ત્યારે સાચવાયેલા ફેરફાર કાઢો.
   function flnDraft() {
     roster.fln = roster.fln || {};
     return (roster.fln[roster.std] = roster.fln[roster.std] || {});
@@ -2663,21 +2529,22 @@
     Object.keys(roster.fln || {}).forEach(function (std) {
       var draft = roster.fln[std];
       var kids = rosterOf(Number(std)).filter(function (s) { return s.active; });
-      Object.keys(draft).forEach(function (roll) {
-        var s = kids.filter(function (x) { return x.roll === Number(roll); })[0];
-        if (!s || s.fln === draft[roll]) delete draft[roll];
+      Object.keys(draft).forEach(function (key) {
+        var s = kids.filter(function (x) { return kidKey(x) === key; })[0];
+        if (!s || s.fln === draft[key]) delete draft[key];
       });
     });
   }
 
   function flnOf(s) {
     var draft = flnDraft();
-    return s.roll in draft ? draft[s.roll] : s.fln;
+    return kidKey(s) in draft ? draft[kidKey(s)] : s.fln;
   }
 
-  function rosterRow(s) {
+  function rosterRow(s, dup) {
     var id = escapeHtml(roster.data.dise + '-' + s.std + '-' + s.roll);
-    if (roster.editing === s.roll) {
+    var key = escapeHtml(kidKey(s));
+    if (roster.editing === kidKey(s)) {
       // એક જ પહોળું ખાનું: મોબાઇલમાં ખાનાં એક નીચે એક.
       return '<tr class="roster-edit"><td colspan="5"><div class="roster-edit-form">' +
         '<label>રોલ નંબર<input class="field" id="edit-roll" inputmode="numeric" maxlength="3" value="' + s.roll + '"></label>' +
@@ -2688,14 +2555,15 @@
         '<div class="roster-edit-btns"><button type="button" class="btn-primary" id="edit-save">' + dm('check') + 'સાચવો</button>' +
           '<button type="button" class="btn-ghost" id="edit-cancel">' + dm('close') + 'રદ કરો</button></div></div></td></tr>';
     }
-    return '<tr' + (s.roll in flnDraft() ? ' class="fln-changed"' : '') + '>' +
-      '<td class="fln-cell"><input type="checkbox" class="fln-box" data-fln="' + s.roll + '"' + (flnOf(s) ? ' checked' : '') +
+    var cls = (kidKey(s) in flnDraft() ? ' fln-changed' : '') + (dup ? ' dup-row' : '');
+    return '<tr' + (cls ? ' class="' + cls.trim() + '"' : '') + '>' +
+      '<td class="fln-cell"><input type="checkbox" class="fln-box" data-fln="' + key + '"' + (flnOf(s) ? ' checked' : '') +
         ' aria-label="' + escapeHtml(s.name) + ' FLN સિદ્ધ"></td>' +
-      '<td>' + s.roll + '</td>' +
+      '<td>' + s.roll + (dup ? '<span class="dup-tag" title="આ રોલ નંબર બીજા બાળકને પણ છે">' + dm('warning') + '</span>' : '') + '</td>' +
       '<td><button type="button" class="drill" data-student="' + id + '">' + escapeHtml(s.name) + dm('chevron_right') + '</button></td>' +
       '<td>' + escapeHtml(s.gender || '—') + '</td>' +
-      '<td class="roster-actions"><button type="button" class="btn-ghost" data-edit="' + s.roll + '" title="નામ / રોલ નંબર સુધારો">' + dm('edit') + '</button>' +
-        '<button type="button" class="btn-ghost danger" data-del="' + s.roll + '" title="યાદીમાંથી કાઢો">' + dm('delete') + '</button></td></tr>';
+      '<td class="roster-actions"><button type="button" class="btn-ghost" data-edit="' + key + '" title="નામ / રોલ નંબર સુધારો">' + dm('edit') + '</button>' +
+        '<button type="button" class="btn-ghost danger" data-del="' + key + '" title="યાદીમાંથી કાઢો">' + dm('delete') + '</button></td></tr>';
   }
 
   function drawRoster() {
@@ -2707,6 +2575,8 @@
     var removed = all.filter(function (s) { return !s.active && !activeRolls[s.roll]; });
     var ticked = active.filter(flnOf).length;
     var pending = Object.keys(flnDraft()).length;
+    var dups = duplicateRolls(active);
+    var dupRolls = Object.keys(dups).map(Number).sort(function (a, b) { return a - b; });
     var html =
       '<div class="admin-card"><h2>' + dm('groups') + 'મારી શાળાનાં બાળકો' + xlButton('roster') + '</h2>' +
         '<div class="fln-note">' + dm('campaign') + '<div><b>સૂચના:</b> ફક્ત એવાં જ બાળકોને <b>✓</b> કરો જેમનું <b>FLN સિદ્ધ થયેલ</b> હોય. ' +
@@ -2715,6 +2585,9 @@
         (roster.data.flnRequired === false ? '<p class="warn-light">' + dm('info') + 'હાલ જિલ્લા કક્ષાએથી FLN ચકાસણી બંધ છે: બધાં ચાલુ બાળકો ટેસ્ટ આપી શકે છે.</p>' : '') +
         '<p class="hint">' + escapeHtml(roster.data.schoolName || '') + ' · ડાયસ ' + escapeHtml(roster.data.dise) + '. બાળકો ડાયસ કોડ, ધોરણ અને રોલ નંબરથી ક્વિઝમાં પ્રવેશ કરશે. ' +
           'નામ પર ક્લિક કરો: ક્વિઝવાર પરિણામ ખૂલશે. ' + dm('edit') + ' = નામ / રોલ નંબર સુધારો, ' + dm('delete') + ' = યાદીમાંથી કાઢો.</p>' +
+        (dupRolls.length ? '<div class="dup-note">' + dm('warning') + '<div><b>એક જ રોલ નંબર બે બાળકોને અપાયો છે:</b> ' +
+          dupRolls.map(function (r) { return 'રોલ ' + r + ' (' + dups[r].map(function (k) { return escapeHtml(k.name); }).join(', ') + ')'; }).join('; ') +
+          '.<br>આમાંથી એક બાળકની સામે ' + dm('edit') + ' દબાવી તેને <b>ખાલી નવો રોલ નંબર</b> આપો. ત્યાં સુધી એ રોલ નંબરથી ફક્ત એક જ બાળક પ્રવેશ કરી શકશે.</div></div>' : '') +
         '<div class="chips mt-3">' + [5, 8].map(function (s) {
           var kids = rosterOf(s).filter(function (x) { return x.active; });
           var n = kids.filter(function (x) { return x.fln; }).length;
@@ -2722,7 +2595,7 @@
         }).join('') + '</div>' +
         (active.length
           ? '<div class="roster-list"><table class="summary-table roster-table"><thead><tr><th>FLN ✓</th><th>રોલ</th><th>નામ</th><th>જાતિ</th><th></th></tr></thead><tbody>' +
-            active.map(rosterRow).join('') + '</tbody></table></div>' +
+            active.map(function (k) { return rosterRow(k, !!dups[k.roll]); }).join('') + '</tbody></table></div>' +
             '<div class="fln-bar">' +
               '<span class="grow">' + dm('verified') + 'FLN ✓ <b>' + ticked + '</b> / ' + active.length +
                 (pending ? ' · <b class="fln-pending">' + pending + ' ફેરફાર સાચવવાના બાકી</b>' : '') + '</span>' +
@@ -2730,53 +2603,47 @@
               '<button type="button" class="btn-ghost" id="fln-none">બધાં ખાલી</button>' +
               '<button type="button" class="btn-primary" id="fln-save"' + (pending ? '' : ' disabled') + '>' + dm('save') + 'SAVE' + (pending ? ' (' + pending + ')' : '') + '</button>' +
             '</div>'
-          : '<p class="hint">ધોરણ ' + roster.std + 'નાં બાળકો હજુ ઉમેર્યાં નથી. નીચે યાદી paste કરો.</p>') +
+          : '<p class="hint">ધોરણ ' + roster.std + 'નાં બાળકો હજુ યાદીમાં નથી. નીચેથી વિદ્યાર્થી ઉમેરો.</p>') +
+        addStudentBox(active) +
         (removed.length
           ? '<details class="mt-3"><summary class="hint">કાઢેલાં બાળકો (' + removed.length + ') — જૂનું પરિણામ સચવાયેલું છે</summary>' +
               '<div class="table-wrap roster-wrap"><table class="summary-table"><tbody>' + removed.map(function (s) {
-                return '<tr><td>' + s.roll + '</td><td>' + escapeHtml(s.name) + '</td><td class="roster-actions"><button type="button" class="btn-ghost" data-restore="' + s.roll + '">' + dm('undo') + 'પાછું લાવો</button></td></tr>';
+                return '<tr><td>' + s.roll + '</td><td>' + escapeHtml(s.name) + '</td><td class="roster-actions"><button type="button" class="btn-ghost" data-restore="' + escapeHtml(kidKey(s)) + '">' + dm('undo') + 'પાછું લાવો</button></td></tr>';
               }).join('') + '</tbody></table></div></details>'
           : '') +
-      '</div>' +
-      '<div class="admin-card"><h2>' + dm('content_paste') + 'ધોરણ ' + roster.std + 'ની યાદી paste કરો</h2>' +
-        '<p class="hint">Excel / Google Sheet માં <b>રોલ નંબર</b> અને <b>નામ</b> ની બે કૉલમ (ઇચ્છો તો ત્રીજી <b>જાતિ</b>: કુમાર / કન્યા) પસંદ કરી Copy કરો અને અહીં Paste કરો. ' +
-          'ધોરણની <b>આખી</b> યાદી paste કરો: યાદીમાં ન હોય એવાં બાળકો બંધ થશે. નવાં ઉમેરાયેલાં બાળકોને FLN સિદ્ધ થાય ત્યારે ઉપર ✓ કરો. ' +
-          '(અહીં રોલ નંબર બદલશો તો જૂનું પરિણામ સાથે નહીં જાય — એ માટે બાળકની સામેનું ' + dm('edit') + ' વાપરો.)</p>' +
-        '<textarea class="field roster-paste" id="roster-text" rows="8" placeholder="1&#9;રમેશ પટેલ&#9;કુમાર&#10;2&#9;હેતલ પરમાર&#9;કન્યા">' + escapeHtml(roster.pasted || '') + '</textarea>' +
-        '<div id="roster-preview"></div>' +
       '</div>';
     dashRoot().innerHTML = html;
     var root = dashRoot();
-    function kidOf(attr, el) { var roll = Number(el.getAttribute(attr)); return all.filter(function (s) { return s.roll === roll; })[0]; }
-    function activeKid(roll) { return active.filter(function (s) { return s.roll === roll; })[0]; }
+    function kidOf(attr, el) { var key = el.getAttribute(attr); return all.filter(function (s) { return kidKey(s) === key; })[0]; }
+    function activeKid(key) { return active.filter(function (s) { return kidKey(s) === key; })[0]; }
     root.querySelectorAll('[data-rstd]').forEach(function (b) {
-      b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.pasted = null; roster.editing = null; drawRoster(); });
+      b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.editing = null; roster.adding = false; drawRoster(); });
     });
     root.querySelectorAll('[data-student]').forEach(function (b) {
       b.addEventListener('click', function () { openStudentReport(b.getAttribute('data-student'), function () { markHomeTab('roster'); renderRoster(); }); });
     });
     root.querySelectorAll('[data-fln]').forEach(function (box) {
       box.addEventListener('change', function () {
-        var s = activeKid(Number(box.getAttribute('data-fln')));
+        var s = activeKid(box.getAttribute('data-fln'));
         var draft = flnDraft();
-        if (box.checked === s.fln) delete draft[s.roll]; else draft[s.roll] = box.checked;
+        if (box.checked === s.fln) delete draft[kidKey(s)]; else draft[kidKey(s)] = box.checked;
         drawRoster();
       });
     });
     root.querySelectorAll('[data-edit]').forEach(function (b) {
-      b.addEventListener('click', function () { roster.editing = Number(b.getAttribute('data-edit')); drawRoster(); });
+      b.addEventListener('click', function () { roster.editing = b.getAttribute('data-edit'); drawRoster(); });
     });
     root.querySelectorAll('[data-del]').forEach(function (b) {
-      b.addEventListener('click', function () { removeStudent(activeKid(Number(b.getAttribute('data-del'))), b); });
+      b.addEventListener('click', function () { removeStudent(activeKid(b.getAttribute('data-del')), b); });
     });
     root.querySelectorAll('[data-restore]').forEach(function (b) {
       b.addEventListener('click', function () {
         var s = kidOf('data-restore', b);
-        updateStudents([{ roll: s.roll, active: true }], b, s.name + ' યાદીમાં પાછું આવ્યું. FLN સિદ્ધ હોય તો ✓ કરો.');
+        updateStudents([{ roll: s.roll, row: s.row || undefined, active: true }], b, s.name + ' યાદીમાં પાછું આવ્યું. FLN સિદ્ધ હોય તો ✓ કરો.');
       });
     });
     if ($('edit-save')) {
-      $('edit-save').addEventListener('click', function () { saveEdit(activeKid(roster.editing), active, this); });
+      $('edit-save').addEventListener('click', function () { saveEdit(activeKid(roster.editing), active, this, dups); });
       $('edit-cancel').addEventListener('click', function () { roster.editing = null; drawRoster(); });
       $('edit-name').focus();
     }
@@ -2788,7 +2655,12 @@
       $('fln-none').addEventListener('click', function () { setAllFln(active, false); });
       $('fln-save').addEventListener('click', function () { saveFln(this); });
     }
-    $('roster-text').addEventListener('input', function () { roster.pasted = this.value; drawRosterPreview(); });
+    if ($('add-open')) $('add-open').addEventListener('click', function () { roster.adding = true; roster.editing = null; drawRoster(); });
+    if ($('add-save')) {
+      $('add-save').addEventListener('click', function () { addStudent(active, this); });
+      $('add-cancel').addEventListener('click', function () { roster.adding = false; drawRoster(); });
+      $('add-name').focus();
+    }
     root.querySelectorAll('[data-xl="roster"]').forEach(function (b) {
       b.addEventListener('click', function () {
         var rows = [['ધોરણ', 'રોલ નંબર', 'નામ', 'જાતિ', 'FLN સિદ્ધ']].concat(roster.data.students.filter(function (s) { return s.active; }).map(function (s) {
@@ -2797,18 +2669,61 @@
         downloadXlsx(('પરખ-' + roster.data.dise + '-બાળકો.xlsx'), [{ name: 'બાળકો', rows: rows }]);
       });
     });
-    drawRosterPreview();
+  }
+
+  // પહેલો ખાલી રોલ નંબર (સૌથી મોટા પછીનો) — શાળા બદલી શકે.
+  function nextFreeRoll(active) {
+    return active.reduce(function (m, k) { return Math.max(m, k.roll); }, 0) + 1;
+  }
+
+  function addStudentBox(active) {
+    if (!roster.adding) {
+      return '<button type="button" class="btn-ghost add-open" id="add-open">' + dm('person_add') + 'વિદ્યાર્થી ઉમેરો</button>';
+    }
+    return '<div class="add-box"><h3>' + dm('person_add') + 'ધોરણ ' + roster.std + 'માં નવો વિદ્યાર્થી</h3>' +
+      '<div class="roster-edit-form">' +
+        '<label>રોલ નંબર<input class="field" id="add-roll" inputmode="numeric" maxlength="3" value="' + nextFreeRoll(active) + '"></label>' +
+        '<label>નામ<input class="field" id="add-name" maxlength="80" placeholder="વિદ્યાર્થીનું પૂરું નામ"></label>' +
+        '<label>જાતિ<select class="field" id="add-gender"><option value="">—</option><option>કુમાર</option><option>કન્યા</option></select></label>' +
+        '<label class="add-fln"><input type="checkbox" class="fln-box" id="add-fln"> FLN સિદ્ધ થયેલ છે (✓ હોય તો જ પરખ ટેસ્ટ આપી શકશે)</label>' +
+        '<div class="roster-edit-btns"><button type="button" class="btn-primary" id="add-save">' + dm('check') + 'ઉમેરો</button>' +
+          '<button type="button" class="btn-ghost" id="add-cancel">' + dm('close') + 'રદ કરો</button></div>' +
+      '</div></div>';
+  }
+
+  function addStudent(active, btn) {
+    var rollText = rosterDigits($('add-roll').value);
+    var roll = Number(rollText);
+    var name = String($('add-name').value || '').replace(/\s+/g, ' ').trim();
+    if (!/^\d{1,3}$/.test(rollText) || roll < 1) { window.alert('રોલ નંબર 1 થી 999 વચ્ચેનો અંક લખો.'); return; }
+    if (!name) { window.alert('વિદ્યાર્થીનું નામ લખો.'); return; }
+    var taken = active.filter(function (k) { return k.roll === roll; })[0];
+    if (taken) { window.alert('રોલ નંબર ' + roll + ' પર ' + taken.name + ' છે. બીજો રોલ નંબર આપો.'); return; }
+    var label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin') + 'ઉમેરે છે...';
+    callServer('apiAddStudent', getToken(), roster.std, roll, name, $('add-gender').value, $('add-fln').checked).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { btn.disabled = false; btn.innerHTML = label; window.alert(r.message || 'ઉમેરી શકાયું નહીં.'); return; }
+      window.alert(r.name + ' (રોલ ' + r.roll + ') ઉમેર્યું.');
+      roster.adding = false;
+      renderRoster();
+    });
   }
 
   function setAllFln(active, value) {
     var draft = flnDraft();
-    active.forEach(function (s) { if (s.fln === value) delete draft[s.roll]; else draft[s.roll] = value; });
+    active.forEach(function (s) { if (s.fln === value) delete draft[kidKey(s)]; else draft[kidKey(s)] = value; });
     drawRoster();
   }
 
   function saveFln(btn) {
     var draft = flnDraft();
-    var changes = Object.keys(draft).map(function (roll) { return { roll: Number(roll), fln: draft[roll] }; });
+    var kids = rosterOf(roster.std).filter(function (s) { return s.active; });
+    var changes = Object.keys(draft).map(function (key) {
+      var s = kids.filter(function (x) { return kidKey(x) === key; })[0];
+      return s ? { roll: s.roll, row: s.row || undefined, fln: draft[key] } : null;
+    }).filter(Boolean);
     if (!changes.length) return;
     var on = changes.filter(function (c) { return c.fln; }).length;
     var off = changes.length - on;
@@ -2819,7 +2734,7 @@
 
   function removeStudent(s, btn) {
     if (!window.confirm(s.name + ' (રોલ ' + s.roll + ') ને યાદીમાંથી કાઢવું છે?\nતે પરખ ટેસ્ટ નહીં આપી શકે. જૂનું પરિણામ સચવાશે અને "કાઢેલાં બાળકો" માંથી પાછું લાવી શકાશે.')) return;
-    updateStudents([{ roll: s.roll, active: false }], btn, s.name + ' યાદીમાંથી કાઢ્યું.');
+    updateStudents([{ roll: s.roll, row: s.row || undefined, active: false }], btn, s.name + ' યાદીમાંથી કાઢ્યું.');
   }
 
   function updateStudents(changes, btn, done) {
@@ -2840,7 +2755,8 @@
   }
 
   // સુધારો: રોલ નંબર બદલાયો હોય તો પહેલાં apiChangeRoll (પરિણામ સાથે જાય), પછી નામ / જાતિ.
-  function saveEdit(s, active, btn) {
+  function saveEdit(s, active, btn, dups) {
+    var dup = !!(dups && dups[s.roll]);
     var rollText = rosterDigits($('edit-roll').value);
     var to = Number(rollText);
     var name = String($('edit-name').value || '').replace(/\s+/g, ' ').trim();
@@ -2850,7 +2766,14 @@
     var rollChanged = to !== s.roll;
     var infoChanged = name !== s.name || gender !== (s.gender || '');
     if (!rollChanged && !infoChanged) { roster.editing = null; drawRoster(); return; }
-    if (rollChanged) {
+    if (rollChanged && dup) {
+      // ભૂલથી એક જ રોલ બે બાળકોને: આ બાળકને ખાલી નવો રોલ (પરિણામ જૂના રોલ પર જ રહે).
+      var busy = active.filter(function (x) { return x.roll === to; })[0];
+      if (busy) { window.alert('રોલ નંબર ' + to + ' પર ' + busy.name + ' છે. ' + s.name + ' ને કોઈ ખાલી રોલ નંબર આપો.'); return; }
+      if (!window.confirm(s.name + ' ને નવો રોલ નંબર ' + to + ' અપાશે.\nરોલ ' + s.roll + ' પર બીજું બાળક (' +
+          dups[s.roll].filter(function (x) { return x !== s; }).map(function (x) { return x.name; }).join(', ') + ') રહેશે, અને રોલ ' + s.roll +
+          ' નું અત્યાર સુધીનું પરિણામ (હોય તો) રોલ ' + s.roll + ' પર જ રહેશે. આગળ વધવું છે?')) return;
+    } else if (rollChanged) {
       var other = active.filter(function (x) { return x.roll === to; })[0];
       var question = other
         ? s.name + ' (રોલ ' + s.roll + ') અને ' + other.name + ' (રોલ ' + to + ') ના રોલ નંબર અદલાબદલી કરવા છે? બંનેનું જૂનું પરિણામ પણ સાથે જશે.'
@@ -2859,12 +2782,12 @@
     }
     btn.disabled = true;
     btn.innerHTML = dm('progress_activity', 'spin');
-    var step = rollChanged ? callServer('apiChangeRoll', getToken(), roster.std, s.roll, to) : Promise.resolve({ ok: true });
+    var step = rollChanged ? callServer('apiChangeRoll', getToken(), roster.std, s.roll, to, dup ? s.row : undefined) : Promise.resolve({ ok: true });
     step.then(function (r) {
       if (handleExpired(r)) return null;
       if (!r.ok) throw new Error(r.message || 'રોલ નંબર બદલી શકાયો નહીં.');
       if (!infoChanged) return r;
-      return callServer('apiUpdateStudents', getToken(), roster.std, [{ roll: to, name: name, gender: gender }]).then(function (u) {
+      return callServer('apiUpdateStudents', getToken(), roster.std, [{ roll: to, row: s.row || undefined, name: name, gender: gender }]).then(function (u) {
         if (handleExpired(u)) return null;
         if (!u.ok) throw new Error((rollChanged ? 'રોલ નંબર બદલાયો, પણ નામ સાચવાયું નહીં: ' : '') + (u.message || 'સાચવી શકાયું નહીં.'));
         return u;
@@ -2880,53 +2803,7 @@
     });
   }
 
-  function drawRosterPreview() {
-    var box = $('roster-preview');
-    if (!box) return;
-    var text = roster.pasted || '';
-    if (!text.trim()) { box.innerHTML = ''; return; }
-    var parsed = parseRosterText(text);
-    var plan = rosterPlan(rosterOf(roster.std), parsed.rows);
-    var ok = parsed.rows.length && !parsed.errors.length;
-    box.innerHTML =
-      (parsed.errors.length ? '<div class="error-card mt-3">' + parsed.errors.slice(0, 8).map(function (e) {
-        return 'લીટી ' + e.line + ': ' + escapeHtml(e.message);
-      }).join('<br>') + (parsed.errors.length > 8 ? '<br>… કુલ ' + parsed.errors.length + ' ભૂલો' : '') + '</div>' : '') +
-      (parsed.rows.length ? '<p class="bulk-count mt-3">' + dm('fact_check') + parsed.rows.length + ' બાળકો મળ્યાં · નવા ' + plan.added +
-        ' · બદલાશે ' + plan.updated + ' · બંધ થશે ' + plan.removed.length + '</p>' +
-        (plan.removed.length ? '<p class="warn-light">' + dm('warning') + 'યાદીમાં નથી, બંધ થશે: ' + plan.removed.slice(0, 10).map(function (s) {
-          return s.roll + ' ' + escapeHtml(s.name);
-        }).join(', ') + (plan.removed.length > 10 ? ' …' : '') + '</p>' : '') +
-        '<div class="table-wrap roster-wrap"><table class="summary-table"><thead><tr><th>રોલ</th><th>નામ</th><th>જાતિ</th></tr></thead><tbody>' +
-        parsed.rows.map(function (r) { return '<tr><td>' + r.roll + '</td><td>' + escapeHtml(r.name) + '</td><td>' + escapeHtml(r.gender || '—') + '</td></tr>'; }).join('') +
-        '</tbody></table></div>' : '') +
-      '<button type="button" class="btn-primary mt-3" id="roster-save"' + (ok ? '' : ' disabled') + '>' + dm('save') + 'ધોરણ ' + roster.std + 'ની યાદી સાચવો</button>';
-    $('roster-save').addEventListener('click', function () {
-      if (plan.removed.length && !window.confirm(plan.removed.length + ' બાળક યાદીમાં નથી, તે બંધ થશે. સાચવવું છે?')) return;
-      saveRoster(parsed.rows, this);
-    });
-  }
 
-  function saveRoster(rows, btn) {
-    btn.disabled = true;
-    btn.innerHTML = dm('progress_activity', 'spin') + 'સાચવે છે...';
-    callServer('apiSaveSchoolStudents', getToken(), roster.std, rows.map(function (r) { return { roll: r.roll, name: r.name, gender: r.gender }; }))
-      .then(function (r) {
-        if (handleExpired(r)) return;
-        if (!r.ok) {
-          btn.disabled = false;
-          btn.innerHTML = dm('save') + 'ફરી સાચવો';
-          window.alert(r.message || 'સાચવી શકાયું નહીં.');
-          return;
-        }
-        window.alert('સાચવ્યું: નવા ' + r.added + ', બદલાયા ' + r.updated + ', બંધ ' + r.deactivated + '.');
-        renderRoster();
-      }, function () {
-        btn.disabled = false;
-        btn.innerHTML = dm('save') + 'ફરી સાચવો';
-        window.alert('નેટ તપાસીને ફરી પ્રયાસ કરો.');
-      });
-  }
 </script>
 
   <script>
