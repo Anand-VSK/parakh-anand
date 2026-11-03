@@ -167,9 +167,20 @@
   .quiz-card.done { background: rgba(34,197,94,.18); border-color: rgba(134,239,172,.6); }
   .quiz-card.locked { opacity: .55; cursor: not-allowed; background: rgba(15,23,42,.35); }
   .quiz-card.locked:active { transform: none; }
-  .roll-change { display: grid; grid-template-columns: 1fr 140px auto; gap: 8px; align-items: center; }
-  .roll-change .btn-primary { width: auto; margin: 0; }
-  @media (max-width: 560px) { .roll-change { grid-template-columns: 1fr; } }
+  .fln-note { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; padding: 12px 14px; border-radius: 14px;
+    background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; line-height: 1.55; }
+  .fln-note > .ms { color: #ea580c; margin-top: 2px; }
+  .roster-table .fln-cell { text-align: center; width: 56px; }
+  .fln-box { width: 22px; height: 22px; accent-color: #16a34a; cursor: pointer; }
+  .roster-table tr.fln-changed td { background: #fefce8; }
+  .roster-actions { white-space: nowrap; text-align: right; }
+  .roster-actions .btn-ghost { min-height: 36px; padding: 0 10px; margin-left: 4px; }
+  .roster-edit .field { margin: 0; min-height: 38px; }
+  .roster-in-roll { width: 70px; }
+  .fln-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; padding: 10px 12px; border-radius: 14px;
+    background: #f0fdf4; border: 1px solid #bbf7d0; position: sticky; bottom: 8px; z-index: 2; }
+  .fln-bar .btn-primary { width: auto; margin: 0; }
+  .fln-pending { color: #b45309; }
   .pass-note { display: flex; gap: 6px; align-items: center; justify-content: center; font-weight: 700; color: #fde68a; margin-top: 6px; }
   .pass-note.ok { color: #bbf7d0; }
   .shuffle-note { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px;
@@ -469,7 +480,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiStudentReport"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiUpdateStudents","apiStudentReport"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -797,7 +808,7 @@
       quizState = {
         quiz: r.quiz, questions: r.questions, index: 0,
         answers: pending ? pending.answers : r.questions.map(function () { return null; }),
-        attemptId: pending ? pending.attemptId : newAttemptId()
+        attemptId: pending ? pending.attemptId : newAttemptId(), resend: !!pending
       };
       if (pending) { submitQuiz(); return; }
       navPush('quiz', { index: 0 });
@@ -872,7 +883,7 @@
     var btn = $('q-submit');
     if (btn) { btn.disabled = true; btn.innerHTML = ms('progress_activity', 'spin') + 'પરિણામ સેવ થઈ રહ્યું છે...'; }
     else home().innerHTML = loadingCard('પરિણામ સેવ થઈ રહ્યું છે...');
-    callServer('apiSubmitQuiz', getToken(), s.quiz.id, s.attemptId, originalAnswers(s)).then(function (r) {
+    sendAttempt(s, 0).then(function (r) {
       if (handleExpired(r)) return;
       if (!r.ok && r.code === 'QUIZ_UNAVAILABLE') {
         // હવે ક્યારેય સ્વીકારાશે નહીં (ક્વિઝ બંધ/બદલાઈ): જૂના જવાબો રાખવાનો અર્થ નથી.
@@ -887,6 +898,18 @@
       // પરિણામ પછી Back = ક્વિઝની યાદી (ફરી પ્રશ્નો પર નહીં).
       navReplace('home');
       renderResult(r.result);
+    });
+  }
+
+  // સર્વર વ્યસ્ત હોય (ઘણાં બાળકો એક સાથે) તો થોડી સેકન્ડ પછી 2 વાર આપમેળે ફરી મોકલો.
+  function sendAttempt(s, tries) {
+    // પહેલી વાર (ફોનમાં બાકી રહેલું નહીં) મોકલીએ ત્યારે સર્વર પરિણામ Sheet માં જૂનું શોધતું નથી.
+    var resend = tries > 0 || !!s.resend;
+    return callServer('apiSubmitQuiz', getToken(), s.quiz.id, s.attemptId, originalAnswers(s), resend).then(function (r) {
+      if (r && !r.ok && !r.expired && r.code !== 'QUIZ_UNAVAILABLE' && tries < 2) {
+        return new Promise(function (done) { setTimeout(done, retryDelay(tries) + 1000); }).then(function () { return sendAttempt(s, tries + 1); });
+      }
+      return r;
     });
   }
 
@@ -917,7 +940,7 @@
     var p = readPending();
     if (!p) return;
     if (!p.questions) { startQuiz(p.quizId, p); return; }
-    quizState = { quiz: p.quiz, questions: p.questions, index: 0, answers: p.answers, attemptId: p.attemptId };
+    quizState = { quiz: p.quiz, questions: p.questions, index: 0, answers: p.answers, attemptId: p.attemptId, resend: true };
     submitQuiz();
   }
 
@@ -2429,7 +2452,7 @@
 
   <script>
   // પરખ – આણંદ : શાળા લોગીન — ધોરણ 5 / 8 નાં બાળકોની યાદી (Excel માંથી copy-paste).
-  var roster = { data: null, std: 5, pasted: null };
+  var roster = { data: null, std: 5, pasted: null, editing: null, fln: {} };
 
   function rosterGender(v) {
     var t = String(v || '').trim().toLowerCase();
@@ -2496,6 +2519,7 @@
       if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
       roster.data = r;
       roster.pasted = null;
+      pruneFlnDraft();
       drawRoster();
     });
   }
@@ -2504,63 +2528,230 @@
     return roster.data.students.filter(function (s) { return s.std === std; });
   }
 
+  // સાચવ્યા વગરના FLN ✓ ફેરફાર (ધોરણવાર): {roll: true/false}. યાદી ફરી ખૂલે ત્યારે સાચવાયેલા ફેરફાર કાઢો.
+  function flnDraft() {
+    roster.fln = roster.fln || {};
+    return (roster.fln[roster.std] = roster.fln[roster.std] || {});
+  }
+
+  function pruneFlnDraft() {
+    Object.keys(roster.fln || {}).forEach(function (std) {
+      var draft = roster.fln[std];
+      var kids = rosterOf(Number(std)).filter(function (s) { return s.active; });
+      Object.keys(draft).forEach(function (roll) {
+        var s = kids.filter(function (x) { return x.roll === Number(roll); })[0];
+        if (!s || s.fln === draft[roll]) delete draft[roll];
+      });
+    });
+  }
+
+  function flnOf(s) {
+    var draft = flnDraft();
+    return s.roll in draft ? draft[s.roll] : s.fln;
+  }
+
+  function rosterRow(s) {
+    var id = escapeHtml(roster.data.dise + '-' + s.std + '-' + s.roll);
+    if (roster.editing === s.roll) {
+      return '<tr class="roster-edit"><td></td>' +
+        '<td><input class="field roster-in-roll" id="edit-roll" inputmode="numeric" maxlength="3" value="' + s.roll + '"></td>' +
+        '<td><input class="field" id="edit-name" maxlength="80" value="' + escapeHtml(s.name) + '"></td>' +
+        '<td><select class="field" id="edit-gender">' + ['', 'કુમાર', 'કન્યા'].map(function (g) {
+          return '<option value="' + g + '"' + (g === (s.gender || '') ? ' selected' : '') + '>' + (g || '—') + '</option>';
+        }).join('') + '</select></td>' +
+        '<td class="roster-actions"><button type="button" class="btn-ghost" id="edit-save" title="સાચવો">' + dm('check') + '</button>' +
+          '<button type="button" class="btn-ghost" id="edit-cancel" title="રદ કરો">' + dm('close') + '</button></td></tr>';
+    }
+    return '<tr' + (s.roll in flnDraft() ? ' class="fln-changed"' : '') + '>' +
+      '<td class="fln-cell"><input type="checkbox" class="fln-box" data-fln="' + s.roll + '"' + (flnOf(s) ? ' checked' : '') +
+        ' aria-label="' + escapeHtml(s.name) + ' FLN સિદ્ધ"></td>' +
+      '<td>' + s.roll + '</td>' +
+      '<td><button type="button" class="drill" data-student="' + id + '">' + escapeHtml(s.name) + dm('chevron_right') + '</button></td>' +
+      '<td>' + escapeHtml(s.gender || '—') + '</td>' +
+      '<td class="roster-actions"><button type="button" class="btn-ghost" data-edit="' + s.roll + '" title="નામ / રોલ નંબર સુધારો">' + dm('edit') + '</button>' +
+        '<button type="button" class="btn-ghost danger" data-del="' + s.roll + '" title="યાદીમાંથી કાઢો">' + dm('delete') + '</button></td></tr>';
+  }
+
   function drawRoster() {
     var all = rosterOf(roster.std);
     var active = all.filter(function (s) { return s.active; });
-    var off = all.length - active.length;
+    var activeRolls = {};
+    active.forEach(function (s) { activeRolls[s.roll] = true; });
+    // કાઢેલાં: એ રોલ પર હાલ કોઈ ચાલુ બાળક ન હોય તે જ (પાછાં લાવી શકાય).
+    var removed = all.filter(function (s) { return !s.active && !activeRolls[s.roll]; });
+    var ticked = active.filter(flnOf).length;
+    var pending = Object.keys(flnDraft()).length;
     var html =
       '<div class="admin-card"><h2>' + dm('groups') + 'મારી શાળાનાં બાળકો' + xlButton('roster') + '</h2>' +
-        '<p class="hint">બાળકના નામ પર ક્લિક કરો: તેનું ક્વિઝવાર પરિણામ અને ક્ષમતાવાર અહેવાલ ખૂલશે.</p>' +
-        '<p class="hint">' + escapeHtml(roster.data.schoolName || '') + ' · ડાયસ ' + escapeHtml(roster.data.dise) + '. બાળકો ડાયસ કોડ, ધોરણ અને રોલ નંબરથી ક્વિઝમાં પ્રવેશ કરશે.</p>' +
+        '<div class="fln-note">' + dm('campaign') + '<div><b>સૂચના:</b> ફક્ત એવાં જ બાળકોને <b>✓</b> કરો જેમનું <b>FLN સિદ્ધ થયેલ</b> હોય. ' +
+          'વર્ષ દરમિયાન જ્યારે પણ કોઈ બાળકનું FLN સિદ્ધ થાય ત્યારે તેના નામ સામે ✓ કરી <b>"SAVE"</b> દબાવો — ' +
+          '<b>✓ કરેલાં બાળકો જ પરખ ટેસ્ટ આપી શકશે.</b></div></div>' +
+        (roster.data.flnRequired === false ? '<p class="warn-light">' + dm('info') + 'હાલ જિલ્લા કક્ષાએથી FLN ચકાસણી બંધ છે: બધાં ચાલુ બાળકો ટેસ્ટ આપી શકે છે.</p>' : '') +
+        '<p class="hint">' + escapeHtml(roster.data.schoolName || '') + ' · ડાયસ ' + escapeHtml(roster.data.dise) + '. બાળકો ડાયસ કોડ, ધોરણ અને રોલ નંબરથી ક્વિઝમાં પ્રવેશ કરશે. ' +
+          'નામ પર ક્લિક કરો: ક્વિઝવાર પરિણામ ખૂલશે. ' + dm('edit') + ' = નામ / રોલ નંબર સુધારો, ' + dm('delete') + ' = યાદીમાંથી કાઢો.</p>' +
         '<div class="chips mt-3">' + [5, 8].map(function (s) {
-          var n = rosterOf(s).filter(function (x) { return x.active; }).length;
-          return '<button type="button" class="chip' + (roster.std === s ? ' on' : '') + '" data-rstd="' + s + '">ધોરણ ' + s + ' (' + n + ')</button>';
+          var kids = rosterOf(s).filter(function (x) { return x.active; });
+          var n = kids.filter(function (x) { return x.fln; }).length;
+          return '<button type="button" class="chip' + (roster.std === s ? ' on' : '') + '" data-rstd="' + s + '">ધોરણ ' + s + ' (FLN ✓ ' + n + ' / ' + kids.length + ')</button>';
         }).join('') + '</div>' +
         (active.length
-          ? '<div class="table-wrap roster-wrap"><table class="summary-table"><thead><tr><th>રોલ</th><th>નામ</th><th>જાતિ</th></tr></thead><tbody>' +
-            active.map(function (s) { return '<tr><td>' + s.roll + '</td><td><button type="button" class="drill" data-student="' + escapeHtml(roster.data.dise + '-' + s.std + '-' + s.roll) + '">' + escapeHtml(s.name) + dm('chevron_right') + '</button></td><td>' + escapeHtml(s.gender || '—') + '</td></tr>'; }).join('') +
-            '</tbody></table></div>'
+          ? '<div class="table-wrap roster-wrap"><table class="summary-table roster-table"><thead><tr><th>FLN ✓</th><th>રોલ</th><th>નામ</th><th>જાતિ</th><th></th></tr></thead><tbody>' +
+            active.map(rosterRow).join('') + '</tbody></table></div>' +
+            '<div class="fln-bar">' +
+              '<span class="grow">' + dm('verified') + 'FLN ✓ <b>' + ticked + '</b> / ' + active.length +
+                (pending ? ' · <b class="fln-pending">' + pending + ' ફેરફાર સાચવવાના બાકી</b>' : '') + '</span>' +
+              '<button type="button" class="btn-ghost" id="fln-all">બધાં ✓</button>' +
+              '<button type="button" class="btn-ghost" id="fln-none">બધાં ખાલી</button>' +
+              '<button type="button" class="btn-primary" id="fln-save"' + (pending ? '' : ' disabled') + '>' + dm('save') + 'SAVE' + (pending ? ' (' + pending + ')' : '') + '</button>' +
+            '</div>'
           : '<p class="hint">ધોરણ ' + roster.std + 'નાં બાળકો હજુ ઉમેર્યાં નથી. નીચે યાદી paste કરો.</p>') +
-        (off ? '<p class="hint">' + off + ' બાળક બંધ કરેલાં છે (જૂનું પરિણામ સચવાયેલું છે).</p>' : '') +
+        (removed.length
+          ? '<details class="mt-3"><summary class="hint">કાઢેલાં બાળકો (' + removed.length + ') — જૂનું પરિણામ સચવાયેલું છે</summary>' +
+              '<div class="table-wrap roster-wrap"><table class="summary-table"><tbody>' + removed.map(function (s) {
+                return '<tr><td>' + s.roll + '</td><td>' + escapeHtml(s.name) + '</td><td class="roster-actions"><button type="button" class="btn-ghost" data-restore="' + s.roll + '">' + dm('undo') + 'પાછું લાવો</button></td></tr>';
+              }).join('') + '</tbody></table></div></details>'
+          : '') +
       '</div>' +
-      (active.length
-        ? '<div class="admin-card"><h2>' + dm('swap_vert') + 'રોલ નંબર બદલો</h2>' +
-            '<p class="hint">બાળકનો રોલ નંબર બદલવા અહીંથી જ બદલો — તેનું જૂનું પરિણામ પણ નવા રોલ નંબર સાથે જશે. ' +
-              'નવો રોલ નંબર બીજા બાળકનો હોય તો બંનેના રોલ નંબર અદલાબદલી થશે.</p>' +
-            '<div class="roll-change mt-3">' +
-              '<select class="field" id="roll-from">' + active.map(function (s) {
-                return '<option value="' + s.roll + '">' + s.roll + ' · ' + escapeHtml(s.name) + '</option>';
-              }).join('') + '</select>' +
-              '<input class="field" id="roll-to" inputmode="numeric" maxlength="3" placeholder="નવો રોલ નંબર">' +
-              '<button type="button" class="btn-primary" id="roll-save">' + dm('swap_vert') + 'બદલો</button>' +
-            '</div>' +
-          '</div>'
-        : '') +
       '<div class="admin-card"><h2>' + dm('content_paste') + 'ધોરણ ' + roster.std + 'ની યાદી paste કરો</h2>' +
         '<p class="hint">Excel / Google Sheet માં <b>રોલ નંબર</b> અને <b>નામ</b> ની બે કૉલમ (ઇચ્છો તો ત્રીજી <b>જાતિ</b>: કુમાર / કન્યા) પસંદ કરી Copy કરો અને અહીં Paste કરો. ' +
-          'ધોરણની <b>આખી</b> યાદી paste કરો: યાદીમાં ન હોય એવાં બાળકો બંધ થશે. ' +
-          '(અહીં રોલ નંબર બદલશો તો જૂનું પરિણામ સાથે નહીં જાય — એ માટે ઉપરનું "રોલ નંબર બદલો" વાપરો.)</p>' +
+          'ધોરણની <b>આખી</b> યાદી paste કરો: યાદીમાં ન હોય એવાં બાળકો બંધ થશે. નવાં ઉમેરાયેલાં બાળકોને FLN સિદ્ધ થાય ત્યારે ઉપર ✓ કરો. ' +
+          '(અહીં રોલ નંબર બદલશો તો જૂનું પરિણામ સાથે નહીં જાય — એ માટે બાળકની સામેનું ' + dm('edit') + ' વાપરો.)</p>' +
         '<textarea class="field roster-paste" id="roster-text" rows="8" placeholder="1&#9;રમેશ પટેલ&#9;કુમાર&#10;2&#9;હેતલ પરમાર&#9;કન્યા">' + escapeHtml(roster.pasted || '') + '</textarea>' +
         '<div id="roster-preview"></div>' +
       '</div>';
     dashRoot().innerHTML = html;
-    dashRoot().querySelectorAll('[data-rstd]').forEach(function (b) {
-      b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.pasted = null; drawRoster(); });
+    var root = dashRoot();
+    function kidOf(attr, el) { var roll = Number(el.getAttribute(attr)); return all.filter(function (s) { return s.roll === roll; })[0]; }
+    function activeKid(roll) { return active.filter(function (s) { return s.roll === roll; })[0]; }
+    root.querySelectorAll('[data-rstd]').forEach(function (b) {
+      b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.pasted = null; roster.editing = null; drawRoster(); });
     });
-    dashRoot().querySelectorAll('[data-student]').forEach(function (b) {
+    root.querySelectorAll('[data-student]').forEach(function (b) {
       b.addEventListener('click', function () { openStudentReport(b.getAttribute('data-student'), function () { markHomeTab('roster'); renderRoster(); }); });
     });
-    $('roster-text').addEventListener('input', function () { roster.pasted = this.value; drawRosterPreview(); });
-    if ($('roll-save')) $('roll-save').addEventListener('click', function () { changeRoll(active, this); });
-    dashRoot().querySelectorAll('[data-xl="roster"]').forEach(function (b) {
+    root.querySelectorAll('[data-fln]').forEach(function (box) {
+      box.addEventListener('change', function () {
+        var s = activeKid(Number(box.getAttribute('data-fln')));
+        var draft = flnDraft();
+        if (box.checked === s.fln) delete draft[s.roll]; else draft[s.roll] = box.checked;
+        drawRoster();
+      });
+    });
+    root.querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () { roster.editing = Number(b.getAttribute('data-edit')); drawRoster(); });
+    });
+    root.querySelectorAll('[data-del]').forEach(function (b) {
+      b.addEventListener('click', function () { removeStudent(activeKid(Number(b.getAttribute('data-del'))), b); });
+    });
+    root.querySelectorAll('[data-restore]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var rows = [['ધોરણ', 'રોલ નંબર', 'નામ', 'જાતિ']].concat(roster.data.students.filter(function (s) { return s.active; }).map(function (s) {
-          return [s.std, s.roll, s.name, s.gender];
+        var s = kidOf('data-restore', b);
+        updateStudents([{ roll: s.roll, active: true }], b, s.name + ' યાદીમાં પાછું આવ્યું. FLN સિદ્ધ હોય તો ✓ કરો.');
+      });
+    });
+    if ($('edit-save')) {
+      $('edit-save').addEventListener('click', function () { saveEdit(activeKid(roster.editing), active, this); });
+      $('edit-cancel').addEventListener('click', function () { roster.editing = null; drawRoster(); });
+      $('edit-name').focus();
+    }
+    if ($('fln-all')) {
+      $('fln-all').addEventListener('click', function () {
+        if (!window.confirm('ધોરણ ' + roster.std + 'નાં બધાં ' + active.length + ' બાળકોનું FLN સિદ્ધ થયેલ છે? ફક્ત FLN સિદ્ધ થયેલ બાળકોને જ ✓ કરો.')) return;
+        setAllFln(active, true);
+      });
+      $('fln-none').addEventListener('click', function () { setAllFln(active, false); });
+      $('fln-save').addEventListener('click', function () { saveFln(this); });
+    }
+    $('roster-text').addEventListener('input', function () { roster.pasted = this.value; drawRosterPreview(); });
+    root.querySelectorAll('[data-xl="roster"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var rows = [['ધોરણ', 'રોલ નંબર', 'નામ', 'જાતિ', 'FLN સિદ્ધ']].concat(roster.data.students.filter(function (s) { return s.active; }).map(function (s) {
+          return [s.std, s.roll, s.name, s.gender, s.fln ? 'હા' : ''];
         }));
         downloadXlsx(('પરખ-' + roster.data.dise + '-બાળકો.xlsx'), [{ name: 'બાળકો', rows: rows }]);
       });
     });
     drawRosterPreview();
+  }
+
+  function setAllFln(active, value) {
+    var draft = flnDraft();
+    active.forEach(function (s) { if (s.fln === value) delete draft[s.roll]; else draft[s.roll] = value; });
+    drawRoster();
+  }
+
+  function saveFln(btn) {
+    var draft = flnDraft();
+    var changes = Object.keys(draft).map(function (roll) { return { roll: Number(roll), fln: draft[roll] }; });
+    if (!changes.length) return;
+    var on = changes.filter(function (c) { return c.fln; }).length;
+    var off = changes.length - on;
+    if (!window.confirm((on ? on + ' બાળક FLN સિદ્ધ — પરખ ટેસ્ટ આપી શકશે. ' : '') +
+        (off ? off + ' બાળકનું ✓ હટશે — ટેસ્ટ નહીં આપી શકે. ' : '') + 'સાચવવું છે?')) return;
+    updateStudents(changes, btn, 'FLN સાચવ્યું: ' + changes.length + ' ફેરફાર.');
+  }
+
+  function removeStudent(s, btn) {
+    if (!window.confirm(s.name + ' (રોલ ' + s.roll + ') ને યાદીમાંથી કાઢવું છે?\nતે પરખ ટેસ્ટ નહીં આપી શકે. જૂનું પરિણામ સચવાશે અને "કાઢેલાં બાળકો" માંથી પાછું લાવી શકાશે.')) return;
+    updateStudents([{ roll: s.roll, active: false }], btn, s.name + ' યાદીમાંથી કાઢ્યું.');
+  }
+
+  function updateStudents(changes, btn, done) {
+    var label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin');
+    callServer('apiUpdateStudents', getToken(), roster.std, changes).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { btn.disabled = false; btn.innerHTML = label; window.alert(r.message || 'સાચવી શકાયું નહીં.'); return; }
+      if (done) window.alert(done);
+      roster.editing = null;
+      renderRoster();
+    }, function () {
+      btn.disabled = false;
+      btn.innerHTML = label;
+      window.alert('નેટ તપાસીને ફરી પ્રયાસ કરો.');
+    });
+  }
+
+  // સુધારો: રોલ નંબર બદલાયો હોય તો પહેલાં apiChangeRoll (પરિણામ સાથે જાય), પછી નામ / જાતિ.
+  function saveEdit(s, active, btn) {
+    var rollText = rosterDigits($('edit-roll').value);
+    var to = Number(rollText);
+    var name = String($('edit-name').value || '').replace(/\s+/g, ' ').trim();
+    var gender = $('edit-gender').value;
+    if (!/^\d{1,3}$/.test(rollText) || to < 1) { window.alert('રોલ નંબર 1 થી 999 વચ્ચેનો અંક લખો.'); return; }
+    if (!name) { window.alert('નામ ખાલી ન રાખો.'); return; }
+    var rollChanged = to !== s.roll;
+    var infoChanged = name !== s.name || gender !== (s.gender || '');
+    if (!rollChanged && !infoChanged) { roster.editing = null; drawRoster(); return; }
+    if (rollChanged) {
+      var other = active.filter(function (x) { return x.roll === to; })[0];
+      var question = other
+        ? s.name + ' (રોલ ' + s.roll + ') અને ' + other.name + ' (રોલ ' + to + ') ના રોલ નંબર અદલાબદલી કરવા છે? બંનેનું જૂનું પરિણામ પણ સાથે જશે.'
+        : s.name + ' નો રોલ નંબર ' + s.roll + ' થી ' + to + ' કરવો છે? જૂનું પરિણામ પણ નવા રોલ નંબર સાથે જશે.';
+      if (!window.confirm(question)) return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin');
+    var step = rollChanged ? callServer('apiChangeRoll', getToken(), roster.std, s.roll, to) : Promise.resolve({ ok: true });
+    step.then(function (r) {
+      if (handleExpired(r)) return null;
+      if (!r.ok) throw new Error(r.message || 'રોલ નંબર બદલી શકાયો નહીં.');
+      if (!infoChanged) return r;
+      return callServer('apiUpdateStudents', getToken(), roster.std, [{ roll: to, name: name, gender: gender }]).then(function (u) {
+        if (handleExpired(u)) return null;
+        if (!u.ok) throw new Error((rollChanged ? 'રોલ નંબર બદલાયો, પણ નામ સાચવાયું નહીં: ' : '') + (u.message || 'સાચવી શકાયું નહીં.'));
+        return u;
+      });
+    }).then(function (r) {
+      if (!r) return;
+      roster.editing = null;
+      renderRoster();
+    }, function (err) {
+      window.alert(err && err.message ? err.message : 'નેટ તપાસીને ફરી પ્રયાસ કરો.');
+      roster.editing = null;
+      renderRoster();
+    });
   }
 
   function drawRosterPreview() {
@@ -2587,32 +2778,6 @@
     $('roster-save').addEventListener('click', function () {
       if (plan.removed.length && !window.confirm(plan.removed.length + ' બાળક યાદીમાં નથી, તે બંધ થશે. સાચવવું છે?')) return;
       saveRoster(parsed.rows, this);
-    });
-  }
-
-  function changeRoll(active, btn) {
-    var from = Number($('roll-from').value);
-    var to = Number(rosterDigits($('roll-to').value));
-    if (!to || to < 1 || to > 999 || String(to) !== rosterDigits($('roll-to').value)) { window.alert('નવો રોલ નંબર 1 થી 999 વચ્ચેનો અંક લખો.'); return; }
-    if (to === from) { window.alert('નવો રોલ નંબર જૂના કરતાં અલગ હોવો જોઈએ.'); return; }
-    var kid = active.filter(function (s) { return s.roll === from; })[0];
-    var other = active.filter(function (s) { return s.roll === to; })[0];
-    var question = other
-      ? kid.name + ' (રોલ ' + from + ') અને ' + other.name + ' (રોલ ' + to + ') ના રોલ નંબર અદલાબદલી કરવા છે?'
-      : kid.name + ' નો રોલ નંબર ' + from + ' થી ' + to + ' કરવો છે?';
-    if (!window.confirm(question)) return;
-    btn.disabled = true;
-    btn.innerHTML = dm('progress_activity', 'spin') + 'બદલે છે...';
-    callServer('apiChangeRoll', getToken(), roster.std, from, to).then(function (r) {
-      if (handleExpired(r)) return;
-      if (!r.ok) {
-        btn.disabled = false;
-        btn.innerHTML = dm('swap_vert') + 'બદલો';
-        window.alert(r.message || 'બદલી શકાયું નહીં.');
-        return;
-      }
-      window.alert((r.swapped ? 'રોલ નંબર અદલાબદલી થયા.' : 'રોલ નંબર બદલાયો.') + ' ' + r.results + ' પરિણામ નવા રોલ નંબર સાથે જોડાયાં.');
-      renderRoster();
     });
   }
 
@@ -2782,16 +2947,37 @@
   function setToken(t) { state.token = t; try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
   function clearToken() { state.token = null; try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
 
-  function callServer(fnName) {
-    var args = Array.prototype.slice.call(arguments, 1);
+  // ફક્ત વાંચવાનાં કામ: નેટ તૂટે કે સર્વર વ્યસ્ત હોય (ઘણાં બાળકો એક સાથે) તો 2 વાર આપમેળે ફરી.
+  // રાહ થોડી અલગ-અલગ (random): બધા ફોન એક જ સેકન્ડે ફરી ન મોકલે.
+  var RETRY_CALLS = { apiStudentLogin: 1, apiGetSession: 1, apiListQuizzes: 1, apiGetQuiz: 1, apiSchoolStudents: 1,
+    apiDashboard: 1, apiOverview: 1, apiSchoolQuizStatus: 1, apiStudentReport: 1 };
+
+  function retryDelay(tries) {
+    return 2000 * (tries + 1) + Math.floor(Math.random() * 1500);
+  }
+
+  function callServerOnce(fnName, args) {
     return new Promise(function (resolve) {
       var runner = google.script.run
-        .withSuccessHandler(function (r) { resolve(r || { ok: false, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); })
-        .withFailureHandler(function () { resolve({ ok: false, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); });
+        .withSuccessHandler(function (r) { resolve(r || { ok: false, network: true, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); })
+        .withFailureHandler(function () { resolve({ ok: false, network: true, message: 'નેટવર્ક ભૂલ. ફરી પ્રયત્ન કરો.' }); });
       // GitHub Pages નું જૂનું પેજ અને નવો સર્વર: ફંક્શન ન હોય તો અટકી ન રહો.
       if (typeof runner[fnName] !== 'function') { resolve({ ok: false, message: 'પેજ જૂનું છે. પેજ reload કરો.' }); return; }
       runner[fnName].apply(runner, args);
     });
+  }
+
+  function callServer(fnName) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    function attempt(tries) {
+      return callServerOnce(fnName, args).then(function (r) {
+        if (RETRY_CALLS[fnName] && r && !r.ok && (r.network || r.busy) && tries < 2) {
+          return new Promise(function (done) { setTimeout(done, retryDelay(tries)); }).then(function () { return attempt(tries + 1); });
+        }
+        return r;
+      });
+    }
+    return attempt(0);
   }
 
   // CDN scripts: integrity (SRI) સાથે — CDN પરની ફાઇલ બદલાય તો લોડ જ ન થાય.
