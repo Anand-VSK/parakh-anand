@@ -206,6 +206,15 @@
   .roster-table tr.dup-row td { background: #fef2f2; }
   .dup-tag { color: #dc2626; margin-left: 4px; vertical-align: middle; }
   .dup-tag .ms { font-size: 1.05em; margin: 0; }
+  .reorder-open { width: 100%; margin-top: 10px; color: #4338ca; }
+  .reorder-table .drag-cell { width: 36px; text-align: center; }
+  .drag-handle { display: inline-flex; padding: 6px 2px; cursor: grab; color: #64748b; touch-action: none; user-select: none; }
+  .reorder-table .roll-cell { width: 64px; white-space: nowrap; }
+  .old-roll { display: block; font-size: .75rem; color: #b45309; }
+  .reorder-table tr.roll-moved td { background: #fefce8; }
+  .reorder-table tr.dragging td { opacity: .5; }
+  .reorder-table tr.drop-target td { box-shadow: inset 0 3px 0 #4f46e5; background: #eef2ff; }
+  .move-btns .btn-ghost[disabled] { opacity: .3; }
   .add-open { width: 100%; margin-top: 12px; border-style: dashed; color: #4338ca; }
   .add-box { margin-top: 12px; padding: 14px; border-radius: 14px; background: #eef2ff; border: 1px solid #c7d2fe; }
   .add-box h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 1.05rem; color: #3730a3; }
@@ -508,7 +517,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiUpdateStudents","apiAddStudent","apiStudentReport"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -2481,7 +2490,7 @@
 
   <script>
   // પરખ – આણંદ : શાળા લોગીન — ધોરણ 5 / 8 નાં બાળકોની યાદી (યાદી DIET એ આપી છે; શાળા સુધારે, ઉમેરે, કાઢે, FLN ✓ કરે).
-  var roster = { data: null, std: 5, editing: null, adding: false, fln: {} };
+  var roster = { data: null, std: 5, editing: null, adding: false, fln: {}, order: null };
 
   function rosterDigits(v) {
     return String(v || '').replace(/[૦-૯]/g, function (ch) { return String(ch.charCodeAt(0) - 0x0AE6); }).replace(/\s+/g, '');
@@ -2567,6 +2576,7 @@
   }
 
   function drawRoster() {
+    if (roster.order) { drawReorder(); return; }
     var all = rosterOf(roster.std);
     var active = all.filter(function (s) { return s.active; });
     var activeRolls = {};
@@ -2593,6 +2603,9 @@
           var n = kids.filter(function (x) { return x.fln; }).length;
           return '<button type="button" class="chip' + (roster.std === s ? ' on' : '') + '" data-rstd="' + s + '">ધોરણ ' + s + ' (FLN ✓ ' + n + ' / ' + kids.length + ')</button>';
         }).join('') + '</div>' +
+        (active.length > 1
+          ? '<button type="button" class="btn-ghost reorder-open" id="reorder-open">' + dm('swap_vert') + 'ક્રમ ગોઠવો — નામ ઉપર / નીચે ખસેડી રોલ નંબર સુધારો</button>'
+          : '') +
         (active.length
           ? '<div class="roster-list"><table class="summary-table roster-table"><thead><tr><th>FLN ✓</th><th>રોલ</th><th>નામ</th><th>જાતિ</th><th></th></tr></thead><tbody>' +
             active.map(function (k) { return rosterRow(k, !!dups[k.roll]); }).join('') + '</tbody></table></div>' +
@@ -2617,7 +2630,7 @@
     function kidOf(attr, el) { var key = el.getAttribute(attr); return all.filter(function (s) { return kidKey(s) === key; })[0]; }
     function activeKid(key) { return active.filter(function (s) { return kidKey(s) === key; })[0]; }
     root.querySelectorAll('[data-rstd]').forEach(function (b) {
-      b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.editing = null; roster.adding = false; drawRoster(); });
+      b.addEventListener('click', function () { roster.std = Number(b.getAttribute('data-rstd')); roster.editing = null; roster.adding = false; roster.order = null; drawRoster(); });
     });
     root.querySelectorAll('[data-student]').forEach(function (b) {
       b.addEventListener('click', function () { openStudentReport(b.getAttribute('data-student'), function () { markHomeTab('roster'); renderRoster(); }); });
@@ -2654,6 +2667,15 @@
       });
       $('fln-none').addEventListener('click', function () { setAllFln(active, false); });
       $('fln-save').addEventListener('click', function () { saveFln(this); });
+    }
+    if ($('reorder-open')) {
+      $('reorder-open').addEventListener('click', function () {
+        if (dupRolls.length) { window.alert('પહેલાં એક જ રોલ નંબરવાળાં બાળકોમાંથી એકને ✎ થી ખાલી નવો રોલ નંબર આપો, પછી ક્રમ ગોઠવો.'); return; }
+        roster.editing = null;
+        roster.adding = false;
+        roster.order = active.map(kidKey);
+        drawRoster();
+      });
     }
     if ($('add-open')) $('add-open').addEventListener('click', function () { roster.adding = true; roster.editing = null; drawRoster(); });
     if ($('add-save')) {
@@ -2744,9 +2766,135 @@
     callServer('apiUpdateStudents', getToken(), roster.std, changes).then(function (r) {
       if (handleExpired(r)) return;
       if (!r.ok) { btn.disabled = false; btn.innerHTML = label; window.alert(r.message || 'સાચવી શકાયું નહીં.'); return; }
-      if (done) window.alert(done);
+      applyChanges(changes);
       roster.editing = null;
-      renderRoster();
+      redrawRoster();
+      if (done) window.alert(done);
+    }, function () {
+      btn.disabled = false;
+      btn.innerHTML = label;
+      window.alert('નેટ તપાસીને ફરી પ્રયાસ કરો.');
+    });
+  }
+
+  // સાચવ્યા પછી આખી યાદી ફરી લાવવાને બદલે અહીં જ એ જ ફેરફાર કરો (updateStudentsLocked_ જેવું):
+  // row હોય તો એ જ બાળક, નહીં તો એ રોલની ચાલુ હરોળ પહેલી; "કાઢો" એ રોલની બધી હરોળ પર.
+  function applyChanges(changes) {
+    var kids = rosterOf(roster.std);
+    changes.forEach(function (c) {
+      var same = kids.filter(function (s) { return c.row ? s.row === c.row : s.roll === c.roll; })
+        .sort(function (a, b) { return (b.active ? 1 : 0) - (a.active ? 1 : 0) || a.row - b.row; });
+      if (!same.length) return;
+      if (c.active === false) same.forEach(function (s) { s.active = false; });
+      var s = same[0];
+      if (c.name !== undefined) s.name = c.name;
+      if (c.gender !== undefined) s.gender = c.gender;
+      if (c.fln !== undefined) s.fln = !!c.fln;
+      if (c.active === true) s.active = true;
+    });
+  }
+
+  // રોલ નંબર બદલાયા પછી: {જૂનો રોલ: નવો} — એ રોલની બધી હરોળો (કાઢેલી પણ) સાથે જાય, સર્વર જેવું.
+  function applyRollMap(map) {
+    rosterOf(roster.std).forEach(function (s) { if (s.roll in map) s.roll = map[s.roll]; });
+    roster.data.students.sort(function (a, b) { return a.std - b.std || a.roll - b.roll; });
+  }
+
+  // સ્ક્રીન એ જ જગ્યાએ રહે (ઉપર ન કૂદે).
+  function redrawRoster() {
+    var y = window.pageYOffset;
+    pruneFlnDraft();
+    drawRoster();
+    window.scrollTo(0, y);
+  }
+
+  // ક્રમ ગોઠવો: ▲ ▼ (કે ⠿ પકડીને ખેંચો) — ધોરણના હાલના રોલ નંબર (નાનાથી મોટા) નવા ક્રમે અપાય.
+  function drawReorder() {
+    var active = rosterOf(roster.std).filter(function (s) { return s.active; });
+    var byKey = {};
+    active.forEach(function (s) { byKey[kidKey(s)] = s; });
+    var kids = roster.order.map(function (k) { return byKey[k]; }).filter(Boolean);
+    var rolls = active.map(function (s) { return s.roll; }).sort(function (a, b) { return a - b; });
+    var changed = kids.filter(function (s, n) { return s.roll !== rolls[n]; }).length;
+    var html = '<div class="admin-card"><h2>' + dm('swap_vert') + 'ધોરણ ' + roster.std + ': ક્રમ ગોઠવો</h2>' +
+      '<p class="hint">નામને <b>▲ / ▼</b> થી (કે ' + dm('drag_indicator') + ' પકડીને ખેંચી) ઉપર-નીચે ખસેડો. જે ક્રમમાં નામ હશે એ જ ક્રમે રોલ નંબર ' +
+        rolls.slice(0, 3).join(', ') + (rolls.length > 3 ? ', …' : '') + ' અપાશે. દરેક બાળકનું જૂનું પરિણામ તેની સાથે જ નવા રોલ નંબર પર જશે.</p>' +
+      '<div class="roster-list"><table class="summary-table roster-table reorder-table"><thead><tr><th></th><th>રોલ</th><th>નામ</th><th></th></tr></thead><tbody>' +
+      kids.map(function (s, n) {
+        var moved = s.roll !== rolls[n];
+        return '<tr data-pos="' + n + '"' + (moved ? ' class="roll-moved"' : '') + '>' +
+          '<td class="drag-cell"><span class="drag-handle" data-drag="' + n + '" title="પકડીને ખેંચો">' + dm('drag_indicator') + '</span></td>' +
+          '<td class="roll-cell"><b>' + rolls[n] + '</b>' + (moved ? '<span class="old-roll">(પહેલાં ' + s.roll + ')</span>' : '') + '</td>' +
+          '<td>' + escapeHtml(s.name) + '</td>' +
+          '<td class="roster-actions move-btns"><button type="button" class="btn-ghost" data-up="' + n + '"' + (n ? '' : ' disabled') + ' title="ઉપર">' + dm('arrow_upward') + '</button>' +
+            '<button type="button" class="btn-ghost" data-down="' + n + '"' + (n < kids.length - 1 ? '' : ' disabled') + ' title="નીચે">' + dm('arrow_downward') + '</button></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="fln-bar"><span class="grow">' + dm('swap_vert') + (changed ? '<b class="fln-pending">' + changed + ' બાળકના રોલ નંબર બદલાશે</b>' : 'હજુ કોઈ ફેરફાર નથી') + '</span>' +
+        '<button type="button" class="btn-ghost" id="reorder-cancel">' + dm('close') + 'રદ કરો</button>' +
+        '<button type="button" class="btn-primary" id="reorder-save"' + (changed ? '' : ' disabled') + '>' + dm('save') + 'રોલ નંબર સાચવો</button></div></div>';
+    dashRoot().innerHTML = html;
+    var root = dashRoot();
+    function move(from, to) {
+      if (to < 0 || to >= roster.order.length || from === to) return;
+      var key = roster.order.splice(from, 1)[0];
+      roster.order.splice(to, 0, key);
+      var y = window.pageYOffset;
+      drawReorder();
+      window.scrollTo(0, y);
+    }
+    root.querySelectorAll('[data-up]').forEach(function (b) {
+      b.addEventListener('click', function () { var n = Number(b.getAttribute('data-up')); move(n, n - 1); });
+    });
+    root.querySelectorAll('[data-down]').forEach(function (b) {
+      b.addEventListener('click', function () { var n = Number(b.getAttribute('data-down')); move(n, n + 1); });
+    });
+    // ખેંચો: આંગળી / માઉસ જે હરોળ પર છોડે ત્યાં મૂકો.
+    root.querySelectorAll('[data-drag]').forEach(function (h) {
+      h.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        var from = Number(h.getAttribute('data-drag'));
+        var row = h.closest('tr');
+        var target = null;
+        row.classList.add('dragging');
+        function over(ev) {
+          var el = document.elementFromPoint(ev.clientX, ev.clientY);
+          var tr = el && el.closest ? el.closest('.reorder-table tr[data-pos]') : null;
+          if (target && target !== tr) target.classList.remove('drop-target');
+          target = tr;
+          if (target && target !== row) target.classList.add('drop-target');
+        }
+        function done() {
+          document.removeEventListener('pointermove', over);
+          document.removeEventListener('pointerup', done);
+          document.removeEventListener('pointercancel', done);
+          row.classList.remove('dragging');
+          if (target) { target.classList.remove('drop-target'); move(from, Number(target.getAttribute('data-pos'))); }
+        }
+        document.addEventListener('pointermove', over);
+        document.addEventListener('pointerup', done);
+        document.addEventListener('pointercancel', done);
+      });
+    });
+    $('reorder-cancel').addEventListener('click', function () { roster.order = null; drawRoster(); });
+    $('reorder-save').addEventListener('click', function () { saveReorder(kids, rolls, changed, this); });
+  }
+
+  function saveReorder(kids, rolls, changed, btn) {
+    if (!window.confirm(changed + ' બાળકના રોલ નંબર બદલાશે. દરેકનું જૂનું પરિણામ પણ નવા રોલ નંબર સાથે જશે.\n' +
+        'બાળકોને નવો રોલ નંબર જણાવજો — ટેસ્ટમાં એનાથી જ પ્રવેશ કરશે. સાચવવું છે?')) return;
+    var label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin') + 'સાચવે છે...';
+    var order = kids.map(function (s) { return { row: s.row, roll: s.roll }; });
+    callServer('apiReorderRolls', getToken(), roster.std, order).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { btn.disabled = false; btn.innerHTML = label; window.alert(r.message || 'સાચવી શકાયું નહીં.'); return; }
+      var map = {};
+      kids.forEach(function (s, n) { if (s.roll !== rolls[n]) map[s.roll] = rolls[n]; });
+      applyRollMap(map);
+      roster.order = null;
+      redrawRoster();
+      window.alert('રોલ નંબર સાચવ્યા: ' + changed + ' બાળક' + (r.results ? ' (' + r.results + ' પરિણામ પણ સાથે ખસેડ્યાં)' : '') + '.');
     }, function () {
       btn.disabled = false;
       btn.innerHTML = label;
@@ -2783,19 +2931,26 @@
     btn.disabled = true;
     btn.innerHTML = dm('progress_activity', 'spin');
     var step = rollChanged ? callServer('apiChangeRoll', getToken(), roster.std, s.roll, to, dup ? s.row : undefined) : Promise.resolve({ ok: true });
+    var from = s.roll;
     step.then(function (r) {
       if (handleExpired(r)) return null;
       if (!r.ok) throw new Error(r.message || 'રોલ નંબર બદલી શકાયો નહીં.');
+      if (rollChanged) {
+        // એક જ રોલ બે બાળકોને હતો: ફક્ત આ બાળક ખસે. નહીં તો અદલાબદલી / ખાલી રોલ પર.
+        if (r.split) s.roll = to;
+        else { var map = {}; map[from] = to; map[to] = from; applyRollMap(map); }
+      }
       if (!infoChanged) return r;
       return callServer('apiUpdateStudents', getToken(), roster.std, [{ roll: to, row: s.row || undefined, name: name, gender: gender }]).then(function (u) {
         if (handleExpired(u)) return null;
         if (!u.ok) throw new Error((rollChanged ? 'રોલ નંબર બદલાયો, પણ નામ સાચવાયું નહીં: ' : '') + (u.message || 'સાચવી શકાયું નહીં.'));
+        applyChanges([{ roll: to, row: s.row || undefined, name: name, gender: gender }]);
         return u;
       });
     }).then(function (r) {
       if (!r) return;
       roster.editing = null;
-      renderRoster();
+      redrawRoster();
     }, function (err) {
       window.alert(err && err.message ? err.message : 'નેટ તપાસીને ફરી પ્રયાસ કરો.');
       roster.editing = null;
