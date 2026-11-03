@@ -201,6 +201,15 @@
     .roster-edit-form { grid-template-columns: 1fr; }
   }
   .fln-pending { color: #b45309; }
+  /* ડેશબોર્ડ: ફિલ્ટર પછી "પરિણામ બતાવો"; ત્યાં સુધી જૂના આંકડા ઝાંખા. */
+  .ov-apply { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-top: 14px; padding: 10px 12px;
+    border-radius: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; }
+  .ov-apply span { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+  .ov-apply .btn-primary { width: auto; margin: 0; padding: 0 22px; }
+  .ov-apply.on { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
+  .ov-apply.on .btn-primary { box-shadow: 0 0 0 4px rgba(249,115,22,.25); }
+  @media (max-width: 560px) { .ov-apply .btn-primary { flex: 1 1 100%; } }
+  .ov-stale { opacity: .45; filter: grayscale(.6); pointer-events: none; user-select: none; transition: opacity .2s; }
   .pass-note { display: flex; gap: 6px; align-items: center; justify-content: center; font-weight: 700; color: #fde68a; margin-top: 6px; }
   .pass-note.ok { color: #bbf7d0; }
   .shuffle-note { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 12px; border-radius: 12px;
@@ -1811,6 +1820,7 @@
 
   function renderDashboard(params, fromHistory) {
     dash.params = params || {};
+    dash.pending = null;
     stopOverviewTimer();
     markHomeTab('dash');
     if (!fromHistory) navPush('dash', dash.params);
@@ -1818,7 +1828,9 @@
     var seq = dash.seq = (dash.seq || 0) + 1;
     dash.statusFilter = 'all';
     dashRoot().innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">ડેશબોર્ડ તૈયાર થઈ રહ્યું છે...</p></div>';
-    callServer('apiDashboard', getToken(), dash.params).then(function (r) {
+    // પહેલી વાર (કોઈ ફિલ્ટર/એકમ નહીં): ફક્ત ફિલ્ટરની યાદીઓ — આંકડા "પરિણામ બતાવો" પછી.
+    var ask = Object.keys(dash.params).length ? dash.params : { optionsOnly: true };
+    callServer('apiDashboard', getToken(), ask).then(function (r) {
       if (seq !== dash.seq || !$('tab-body') && !$('app-home')) return;
       if (handleExpired(r)) return;
       if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
@@ -1827,7 +1839,29 @@
     });
   }
 
+  // ફિલ્ટર બદલાય ત્યારે ફક્ત યાદ રાખો; "પરિણામ બતાવો" દબાવે ત્યારે જ સર્વર પર.
+  var DASH_FILTER_KEYS = ['std', 'subject', 'type', 'quizId'];
+
+  function pendDash(changes) {
+    var base = dash.pending || dash.data.filters;
+    var p = {};
+    DASH_FILTER_KEYS.forEach(function (k) { p[k] = base[k] === undefined || base[k] === null ? '' : String(base[k]); });
+    Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
+    var same = DASH_FILTER_KEYS.every(function (k) { return String(p[k] || '') === String(dash.data.filters[k] || ''); });
+    dash.pending = same ? null : p;
+    drawDashboard();
+  }
+
+  function applyDash() {
+    var chosen = dash.pending || (dash.data && dash.data.waiting ? dash.data.filters : null);
+    if (!chosen) return;
+    var ch = { level: dash.data.unit.level, id: dash.data.unit.id };
+    DASH_FILTER_KEYS.forEach(function (k) { ch[k] = chosen[k] === null || chosen[k] === undefined ? '' : String(chosen[k]); });
+    go(ch);
+  }
+
   function go(changes) {
+    dash.pending = null;
     var p = {};
     Object.keys(dash.params).forEach(function (k) { p[k] = dash.params[k]; });
     Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
@@ -1837,8 +1871,14 @@
   function drawDashboard() {
     var d = dash.data;
     var c = d.cards;
+    var stale = !!dash.pending;
+    var waiting = !!d.waiting;
+    var f = dash.pending || d.filters; // ડ્રોપડાઉનમાં દેખાતી પસંદગી
+    var all = d.filters.allQuizzes || d.filters.quizzes;
+    var byStd = all.filter(function (q) { return !f.std || String(q.std) === String(f.std); });
     var subjects = [];
-    d.filters.quizzes.forEach(function (q) { if (subjects.indexOf(q.subject) === -1) subjects.push(q.subject); });
+    byStd.forEach(function (q) { if (subjects.indexOf(q.subject) === -1) subjects.push(q.subject); });
+    var quizList = byStd.filter(function (q) { return !f.subject || q.subject === f.subject; });
     var html =
       '<div class="crumbs">' + d.path.map(function (p, i) {
         var last = i === d.path.length - 1;
@@ -1847,18 +1887,30 @@
       }).join('') + '</div>' +
       '<div class="dash-filters">' +
         '<div class="chips">' + [['', 'બધાં ધોરણ'], ['5', 'ધોરણ 5'], ['8', 'ધોરણ 8']].map(function (o) {
-          return '<button type="button" class="chip' + (String(d.filters.std || '') === o[0] ? ' on' : '') + '" data-std-f="' + o[0] + '">' + o[1] + '</button>';
+          return '<button type="button" class="chip' + (String(f.std || '') === o[0] ? ' on' : '') + '" data-std-f="' + o[0] + '">' + o[1] + '</button>';
         }).join('') + '</div>' +
         '<select class="field" id="f-subject"><option value="">બધા વિષય</option>' + subjects.map(function (s) {
-          return '<option' + (s === d.filters.subject ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
+          return '<option' + (s === f.subject ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
         }).join('') + '</select>' +
         ((d.filters.types || []).length ? '<select class="field" id="f-type"><option value="">બધા પ્રકારની શાળા</option>' + d.filters.types.map(function (t) {
-          return '<option' + (t === d.filters.type ? ' selected' : '') + '>' + escapeHtml(t) + '</option>';
+          return '<option' + (t === f.type ? ' selected' : '') + '>' + escapeHtml(t) + '</option>';
         }).join('') + '</select>' : '') +
-        '<select class="field" id="f-quiz"><option value="">બધી ક્વિઝ</option>' + d.filters.quizzes.map(function (q) {
-          return '<option value="' + escapeHtml(q.id) + '"' + (q.id === d.filters.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
+        '<select class="field" id="f-quiz"><option value="">બધી ક્વિઝ</option>' + quizList.map(function (q) {
+          return '<option value="' + escapeHtml(q.id) + '"' + (q.id === f.quizId ? ' selected' : '') + '>ધો. ' + q.std + ' · ' + escapeHtml(q.title) + '</option>';
         }).join('') + '</select>' +
       '</div>' +
+      '<div class="ov-apply' + (stale || waiting ? ' on' : '') + '">' +
+        (stale ? '<span>' + dm('info') + 'ફિલ્ટર બદલાયા છે — નવું પરિણામ જોવા બટન દબાવો.</span>'
+          : waiting ? '<span>' + dm('info') + 'ફિલ્ટર પસંદ કરો (ઇચ્છો તો બધું ખાલી રાખો) અને બટન દબાવો.</span>'
+          : '<span class="muted">ફિલ્ટર પસંદ કરી બટન દબાવો.</span>') +
+        '<button type="button" class="btn-primary" id="dash-apply"' + (stale || waiting ? '' : ' disabled') + '>' + dm('play_arrow') + 'પરિણામ બતાવો</button>' +
+      '</div>' +
+      '<div id="dash-results"' + (stale ? ' class="ov-stale" aria-hidden="true"' : '') + '>';
+    if (waiting) {
+      html += '<div class="admin-card text-center ov-wait">' + dm('touch_app', 'icon-hero') +
+        '<p>ફિલ્ટર પસંદ કરી <b>"પરિણામ બતાવો"</b> દબાવો — પછી જ આંકડા દેખાશે.</p></div>';
+    } else {
+    html +=
       '<div class="xl-bar"><button type="button" class="btn-ghost" data-xl="results">' + dm('download') + 'પૂરું પરિણામ (Excel)</button></div>' +
       '<div class="kpis">' +
         kpi('groups', 'કુલ બાળકો', c.enrolled) +
@@ -1879,17 +1931,20 @@
     }
     html += childrenTable(d) + rankingCards(d) + questionCards(d) + loCards(d);
     if (d.unit.level === 'school') html += '<div id="school-box"></div>';
+    }
+    html += '</div>';
     dashRoot().innerHTML = html;
+    $('dash-apply').addEventListener('click', applyDash);
 
     dashRoot().querySelectorAll('[data-crumb]').forEach(function (b) {
       b.addEventListener('click', function () { var p = d.path[Number(b.getAttribute('data-crumb'))]; go({ level: p.level, id: p.id }); });
     });
     dashRoot().querySelectorAll('[data-std-f]').forEach(function (b) {
-      b.addEventListener('click', function () { go({ std: b.getAttribute('data-std-f'), subject: '', quizId: '' }); });
+      b.addEventListener('click', function () { pendDash({ std: b.getAttribute('data-std-f'), subject: '', quizId: '' }); });
     });
-    $('f-subject').addEventListener('change', function () { go({ subject: this.value, quizId: '' }); });
-    $('f-quiz').addEventListener('change', function () { go({ quizId: this.value }); });
-    if ($('f-type')) $('f-type').addEventListener('change', function () { go({ type: this.value }); });
+    $('f-subject').addEventListener('change', function () { pendDash({ subject: this.value, quizId: '' }); });
+    $('f-quiz').addEventListener('change', function () { pendDash({ quizId: this.value }); });
+    if ($('f-type')) $('f-type').addEventListener('change', function () { pendDash({ type: this.value }); });
     dashRoot().querySelectorAll('[data-drill]').forEach(function (b) {
       b.addEventListener('click', function () { go({ level: b.getAttribute('data-level'), id: b.getAttribute('data-drill') }); });
     });
@@ -1903,7 +1958,7 @@
       b.addEventListener('click', function () { dash.sortKey = b.getAttribute('data-sort'); drawDashboard(); });
     });
     bindXl(dashRoot());
-    if (d.unit.level === 'school') loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
+    if (d.unit.level === 'school' && !waiting) loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
   }
 
   function kpi(icon, label, value) {
@@ -2085,7 +2140,9 @@
     ['low', '0 થી 3 ગુણ (વધુ મહેનત જરૂરી)'], ['perfect', 'પૂર્ણ 10 / 10']];
   var SUBJECT_COLORS = ['#6d5dfc', '#14b8a6', '#f5b14c', '#ec6fa6', '#38bdf8', '#84cc16'];
   var REFRESH_CHOICES = [[0, 'આપમેળે અપડેટ બંધ'], [30, 'દર 30 સેકન્ડે અપડેટ'], [60, 'દર 1 મિનિટે અપડેટ'], [300, 'દર 5 મિનિટે અપડેટ']];
-  var overview = { params: {}, data: null, timer: null, every: 0, schoolRows: 50, busy: false };
+  // pending = પસંદ કરેલા પણ હજુ લાગુ ન કરેલા ફિલ્ટર: "પરિણામ બતાવો" દબાવે ત્યારે જ સર્વર પર જાય.
+  var overview = { params: {}, data: null, timer: null, every: 0, schoolRows: 50, busy: false, pending: null };
+  var OV_FILTER_KEYS = ['type', 'std', 'taluka', 'school', 'subject', 'set', 'from', 'to', 'band'];
 
   function ovNum(v) { return v === null || v === undefined ? '—' : Number(v).toLocaleString('en-IN'); }
 
@@ -2098,14 +2155,18 @@
     stopOverviewTimer();
     if (!overview.every) return;
     overview.timer = setInterval(function () {
-      // બીજી સ્ક્રીન પર ગયા / logout થયા: ઘડિયાળ બંધ.
+      // બીજી સ્ક્રીન પર ગયા / logout થયા: ઘડિયાળ બંધ. હજુ "પરિણામ બતાવો" દબાવ્યું ન હોય તો અપડેટ નહીં.
       if (!state.session || !$('ov-root')) { stopOverviewTimer(); return; }
+      if (overview.data && overview.data.waiting) return;
       loadOverview(true);
     }, overview.every * 1000);
   }
 
   function renderOverview(params, fromHistory) {
     overview.params = params || {};
+    overview.pending = null;
+    // પહેલી વાર (કોઈ ફિલ્ટર નહીં): ફક્ત ફિલ્ટરની યાદીઓ — આંકડા "પરિણામ બતાવો" પછી.
+    overview.firstOpen = !Object.keys(overview.params).length;
     overview.schoolRows = 50;
     markHomeTab('overview');
     dashRoot().innerHTML = '<div id="ov-root"><div class="admin-card text-center"><div class="spinner admin-spin"></div>' +
@@ -2119,6 +2180,29 @@
     Object.keys(overview.params).forEach(function (k) { p[k] = overview.params[k]; });
     Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
     overview.params = p;
+    overview.pending = null;
+    overview.schoolRows = 50;
+    loadOverview(false, true);
+  }
+
+  // ફિલ્ટર બદલાયું: ફક્ત યાદ રાખો (સર્વર પર નહીં). નીચેના આંકડા ઝાંખા, "પરિણામ બતાવો" ચમકે.
+  function pendOverview(changes) {
+    var p = {};
+    var base = overview.pending || overview.data.filters;
+    OV_FILTER_KEYS.forEach(function (k) { p[k] = base[k] === undefined || base[k] === null ? '' : base[k]; });
+    Object.keys(changes).forEach(function (k) { p[k] = changes[k]; });
+    var same = OV_FILTER_KEYS.every(function (k) { return String(p[k] || '') === String(overview.data.filters[k] || ''); });
+    overview.pending = same ? null : p;
+    drawOverview();
+  }
+
+  function applyOverview() {
+    var chosen = overview.pending || (overview.data && overview.data.waiting ? overview.data.filters : null);
+    if (!chosen) return;
+    var p = { source: overview.params.source };
+    OV_FILTER_KEYS.forEach(function (k) { if (chosen[k]) p[k] = chosen[k]; });
+    overview.params = p;
+    overview.pending = null;
     overview.schoolRows = 50;
     loadOverview(false, true);
   }
@@ -2129,6 +2213,7 @@
     var params = {};
     Object.keys(overview.params).forEach(function (k) { params[k] = overview.params[k]; });
     if (quiet) params.fresh = true;
+    if (overview.firstOpen) { params.optionsOnly = true; overview.firstOpen = false; }
     if ((quiet || keep) && $('ov-live')) { $('ov-live').classList.add('busy'); $('ov-live').lastChild.textContent = 'અપડેટ થઈ રહ્યું છે...'; }
     callServer('apiOverview', getToken(), params).then(function (r) {
       if (seq !== dash.seq || !$('ov-root')) return;
@@ -2154,12 +2239,15 @@
 
   function drawOverview() {
     var d = overview.data;
-    var f = d.filters;
+    var f = overview.pending || d.filters; // ડ્રોપડાઉનમાં પસંદ કરેલું (લાગુ ન થયું હોય તો પણ)
+    var shown = d.filters;                // નીચેના આંકડા જેના છે
+    var stale = !!overview.pending;
+    var waiting = !!d.waiting;
     var o = d.options;
     var c = d.cards;
     var demo = d.source === 'demo';
     var school = d.scope === 'school';
-    var stdText = f.std ? 'ધોરણ ' + f.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
+    var stdText = shown.std ? 'ધોરણ ' + shown.std : o.stds.length === 1 ? 'ધોરણ ' + o.stds[0] : 'ધોરણ 5 અને 8';
     var html =
       '<section class="ov-hero">' +
         '<div class="ov-hero-text"><span class="ov-pill">' + dm('insights') + (demo ? 'ડેમો · e PARAKH પરિણામ' : 'પરખ પરિણામ') + '</span>' +
@@ -2179,14 +2267,29 @@
           (o.types.length && !school ? ovSelect('ov-type', 'શાળાનો પ્રકાર', f.type, [['', 'બધા પ્રકાર']].concat(o.types.map(function (t) { return [t, t]; }))) : '') +
           (o.stds.length > 1 ? ovSelect('ov-std', 'ધોરણ', f.std, [['', 'બધાં ધોરણ']].concat(o.stds.map(function (s) { return [s, 'ધોરણ ' + s]; }))) : '') +
           (school ? '' : ovSelect('ov-taluka', 'તાલુકો', f.taluka, [['', 'બધા તાલુકા']].concat(o.talukas.map(function (t) { return [t, t]; })), d.lockTaluka)) +
-          (school ? '' : ovSelect('ov-school', 'શાળા', f.school, [['', 'બધી શાળાઓ']].concat(o.schools.map(function (s) { return [s.k, s.name + (f.taluka ? '' : ' (' + s.tk + ')')]; })))) +
+          (school ? '' : ovSelect('ov-school', 'શાળા', f.school, [['', 'બધી શાળાઓ']].concat(o.schools.filter(function (s) { return (!f.taluka || s.tk === f.taluka) && (!f.type || !s.ty || s.ty === f.type); })
+            .map(function (s) { return [s.k, s.name + (f.taluka ? '' : ' (' + s.tk + ')')]; })))) +
           ovSelect('ov-subject', 'વિષય', f.subject, [['', 'બધા વિષયો']].concat(o.subjects.map(function (s) { return [s, s]; }))) +
           ovSelect('ov-set', 'સેટ', f.set, [['', 'બધા સેટ']].concat(o.sets.map(function (s) { return [s, 'સેટ ' + s]; }))) +
           '<label class="ov-field"><span>તારીખથી</span><input type="date" class="field" id="ov-from" value="' + escapeHtml(f.from) + '"></label>' +
           '<label class="ov-field"><span>તારીખ સુધી</span><input type="date" class="field" id="ov-to" value="' + escapeHtml(f.to) + '"></label>' +
           ovSelect('ov-band', 'વિદ્યાર્થીઓનું ક્ષમતાવાર પરિણામ', f.band, BAND_LABELS) +
         '</div>' +
+        '<div class="ov-apply' + (stale || waiting ? ' on' : '') + '">' +
+          (stale ? '<span>' + dm('info') + 'ફિલ્ટર બદલાયા છે — નવું પરિણામ જોવા બટન દબાવો.</span>'
+            : waiting ? '<span>' + dm('info') + 'ફિલ્ટર પસંદ કરો (ઇચ્છો તો બધું ખાલી રાખો) અને બટન દબાવો.</span>'
+            : '<span class="muted">ફિલ્ટર પસંદ કરી બટન દબાવો.</span>') +
+          '<button type="button" class="btn-primary" id="ov-apply"' + (stale || waiting ? '' : ' disabled') + '>' + dm('play_arrow') + 'પરિણામ બતાવો</button>' +
+        '</div>' +
       '</section>' +
+      '<div id="ov-results"' + (stale ? ' class="ov-stale" aria-hidden="true"' : '') + '>';
+    if (waiting) {
+      $('ov-root').innerHTML = html + '<div class="admin-card text-center ov-wait">' + dm('touch_app', 'icon-hero') +
+        '<p>ફિલ્ટર પસંદ કરી <b>"પરિણામ બતાવો"</b> દબાવો — પછી જ આંકડા અને ચાર્ટ દેખાશે.</p></div></div>';
+      bindOverview();
+      return;
+    }
+    html +=
 
       '<div class="ov-head"><div><h2>પરિણામોની એક નજર</h2><p class="muted">' + ovNum(c.attempts) + ' / ' + ovNum(d.total) + ' પ્રયત્નો દર્શાવ્યા છે</p></div>' +
         '<div class="ov-head-tools"><select class="field" id="ov-every">' + REFRESH_CHOICES.map(function (x) {
@@ -2219,6 +2322,7 @@
         competencyCard(d) +
         (school ? kidsCard(d) : schoolCard(d));
     }
+    html += '</div>';
     $('ov-root').innerHTML = html;
     bindOverview();
   }
@@ -2410,12 +2514,13 @@
         ch[pair[1]] = this.value;
         // તાલુકો બદલાય તો જૂની શાળા પસંદગી રદ.
         if (pair[1] === 'taluka' || pair[1] === 'std' || pair[1] === 'type') ch.school = '';
-        setOverview(ch);
+        pendOverview(ch);
       });
     });
-    $('ov-clear').addEventListener('click', function () { overview.params = { source: overview.params.source }; loadOverview(false, true); });
-    $('ov-refresh').addEventListener('click', function () { loadOverview(true); });
-    $('ov-every').addEventListener('change', function () { overview.every = Number(this.value); startOverviewTimer(); });
+    $('ov-clear').addEventListener('click', function () { overview.params = { source: overview.params.source }; overview.pending = null; loadOverview(false, true); });
+    $('ov-apply').addEventListener('click', applyOverview);
+    if ($('ov-refresh')) $('ov-refresh').addEventListener('click', function () { loadOverview(true); });
+    if ($('ov-every')) $('ov-every').addEventListener('change', function () { overview.every = Number(this.value); startOverviewTimer(); });
     root.querySelectorAll('[data-band]').forEach(function (b) {
       b.addEventListener('click', function () { setOverview({ band: overview.params.band === b.getAttribute('data-band') ? '' : b.getAttribute('data-band') }); });
     });
