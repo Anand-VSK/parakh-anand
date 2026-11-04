@@ -340,7 +340,8 @@
   .st-done .ms, .st-pending .ms { font-size: 1.1em; }
 
   /* --- પરિણામ ઝલક (e-NAS જેવો દેખાવ) --- */
-  .home-tabs { max-width: 560px; }
+  .home-tabs { max-width: 680px; }
+  @media (max-width: 520px) { .home-tabs .tab { font-size: .85rem; padding: 0 2px; } .home-tabs .tab .ms { display: block; margin: 0 auto; } }
   .ov-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; color: #fff; border-radius: 24px;
     padding: 26px 24px; margin-bottom: 16px; background: radial-gradient(circle at 85% 20%, rgba(255,255,255,.12) 0 120px, transparent 121px),
     linear-gradient(120deg, #2b5ce6 0%, #4338ca 55%, #6d28d9 100%); box-shadow: 0 12px 30px rgba(67,56,202,.25); }
@@ -517,7 +518,7 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport","apiSetupStatus"];
   var TIMEOUT_MS = 45000;
   var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
   function call(fn, args, success, failure) {
@@ -1797,12 +1798,14 @@
   function bar(v) { return '<div class="dbar"><div class="' + pctClass(v) + '" style="width:' + (v || 0) + '%"></div></div>'; }
 
   routes.dash = function (data) { renderDashboard(data || {}, true); };
+  routes.setup = function (data) { renderSetup(data || {}, true); };
 
   // tab: પરિણામ ઝલક / વિગતવાર ડેશબોર્ડ / (DIET) ક્વિઝ.
   function renderOfficialHome() {
     var tabs = [['overview', 'insights', 'પરિણામ ઝલક'], ['dash', 'account_tree', 'વિગતવાર']];
     if (state.session.role === 'DIET') tabs.push(['quiz', 'quiz', 'ક્વિઝ']);
     if (state.session.role === 'SCHOOL') tabs.push(['roster', 'groups', 'વિદ્યાર્થીઓ']);
+    else tabs.push(['setup', 'fact_check', 'શાળા તૈયારી']);
     $('app-home').innerHTML = '<div class="tabs light-tabs home-tabs" style="grid-template-columns:repeat(' + tabs.length + ',1fr)">' +
       tabs.map(function (t, i) {
         return '<button type="button" class="tab' + (i ? '' : ' active') + '" data-home="' + t[0] + '">' + dm(t[1]) + t[2] + '</button>';
@@ -1815,6 +1818,7 @@
         stopOverviewTimer();
         if (which === 'quiz') renderDietHome();
         else if (which === 'roster') renderRoster();
+        else if (which === 'setup') renderSetup({}, true);
         else if (which === 'overview') renderOverview({}, true);
         else renderDashboard({}, true);
       });
@@ -1921,6 +1925,117 @@
     });
     bindXl(dashRoot());
     if (d.unit.level === 'school') loadSchoolBox(d.unit.id, d.filters.quizId || (d.filters.quizzes[0] || {}).id || '');
+  }
+
+  // --- શાળા તૈયારી: પાસવર્ડ બદલ્યો / FLN સિદ્ધ ✓ (DDO…CRC, દરેકને પોતાનો વિસ્તાર) ---
+  var setupView = { params: {}, data: null, filter: 'all' };
+
+  function renderSetup(params, fromHistory) {
+    setupView.params = params || {};
+    setupView.filter = 'all';
+    stopOverviewTimer();
+    markHomeTab('setup');
+    if (!fromHistory) navPush('setup', setupView.params);
+    var seq = dash.seq = (dash.seq || 0) + 1;
+    dashRoot().innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">શાળાઓની માહિતી તૈયાર થઈ રહી છે...</p></div>';
+    callServer('apiSetupStatus', getToken(), setupView.params).then(function (r) {
+      if (seq !== dash.seq) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) { dashRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      setupView.data = r;
+      drawSetup();
+    });
+  }
+
+  function setupPct(part, whole) { return whole ? Math.round((100 * part) / whole) : null; }
+
+  function yesNo(ok) {
+    return ok ? '<span class="st-done">' + dm('check_circle') + 'હા</span>' : '<span class="st-pending">' + dm('cancel') + 'ના</span>';
+  }
+
+  function ofText(part, whole) {
+    return part + ' / ' + whole + ' <span class="muted">(' + fmtPct(setupPct(part, whole)) + ')</span>';
+  }
+
+  function drawSetup() {
+    var d = setupView.data;
+    var t = d.total;
+    var isSchool = d.children.length > 0 && d.children[0].level === 'school';
+    var rows = d.children.filter(function (u) {
+      if (!isSchool || setupView.filter === 'all') return true;
+      return setupView.filter === 'pw' ? !u.changed : !u.fln;
+    });
+    var html =
+      '<div class="crumbs">' + d.path.map(function (p, i) {
+        var last = i === d.path.length - 1;
+        return (i ? dm('chevron_right', 'crumb-sep') : '') + (last ? '<b>' + escapeHtml(p.name) + '</b>'
+          : '<button type="button" class="crumb" data-scrumb="' + i + '">' + escapeHtml(p.name) + '</button>');
+      }).join('') + '</div>' +
+      '<div class="kpis">' +
+        kpi('school', 'કુલ શાળાઓ', t.schools) +
+        kpi('key', 'પાસવર્ડ બદલનાર શાળાઓ', ofText(t.changed, t.schools)) +
+        kpi('task_alt', 'FLN ✓ કરનાર શાળાઓ', ofText(t.flnSchools, t.schools)) +
+        kpi('verified', 'FLN સિદ્ધ બાળકો', ofText(t.fln, t.active)) +
+      '</div>' +
+      '<p class="muted">"FLN ✓ કરનાર શાળા" = જે શાળાએ ઓછામાં ઓછા એક બાળકને FLN સિદ્ધની ટીક કરી હોય. આંકડા 5 મિનિટ સુધી જૂના હોઈ શકે.</p>';
+
+    if (!d.children.length) {
+      html += '<div class="admin-card text-center">' + dm('hourglass_empty', 'icon-hero') + '<p>આ વિસ્તારમાં શાળાઓ નથી.</p></div>';
+    } else {
+      html += '<div class="admin-card"><h2>' + dm(isSchool ? 'school' : 'account_tree') + LEVEL_LABELS[d.children[0].level] + ' પ્રમાણે' +
+        ' <button type="button" class="btn-ghost" data-setup-xl>' + dm('download') + 'Excel</button></h2>';
+      if (isSchool) {
+        var pwLeft = d.children.filter(function (u) { return !u.changed; }).length;
+        var flnLeft = d.children.filter(function (u) { return !u.fln; }).length;
+        html += '<div class="chips">' + [['all', 'બધી (' + d.children.length + ')'], ['pw', 'પાસવર્ડ બાકી (' + pwLeft + ')'], ['fln', 'FLN ✓ બાકી (' + flnLeft + ')']].map(function (o) {
+          return '<button type="button" class="chip' + (setupView.filter === o[0] ? ' on' : '') + '" data-setup-f="' + o[0] + '">' + o[1] + '</button>';
+        }).join('') + '</div>';
+      }
+      html += '<div class="table-wrap"><table class="summary-table dash-table"><thead><tr><th>નામ</th>' +
+        (isSchool ? '<th>ડાયસ કોડ</th><th>પાસવર્ડ બદલ્યો</th><th>FLN સિદ્ધ બાળકો</th>'
+          : '<th>શાળાઓ</th><th>પાસવર્ડ બદલ્યો</th><th>FLN ✓ કરનાર શાળા</th><th>FLN સિદ્ધ બાળકો</th>') +
+        '</tr></thead><tbody>' +
+        rows.map(function (u) {
+          if (isSchool) {
+            return '<tr><td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.id) + '</td><td>' + yesNo(u.changed) + '</td>' +
+              '<td>' + (u.fln ? '<b>' + u.fln + '</b>' : '<span class="st-pending">0</span>') + ' / ' + u.active + '</td></tr>';
+          }
+          var pw = setupPct(u.changed, u.schools);
+          var fs = setupPct(u.flnSchools, u.schools);
+          return '<tr><td><button type="button" class="drill" data-slevel="' + u.level + '" data-sdrill="' + escapeHtml(u.id) + '">' +
+              escapeHtml(u.name) + dm('chevron_right') + '</button></td><td>' + u.schools + '</td>' +
+            '<td>' + bar(pw) + u.changed + ' (' + fmtPct(pw) + ')</td>' +
+            '<td>' + bar(fs) + u.flnSchools + ' (' + fmtPct(fs) + ')</td>' +
+            '<td>' + u.fln + ' / ' + u.active + '</td></tr>';
+        }).join('') +
+        (rows.length ? '' : '<tr><td colspan="5" class="text-center muted">કોઈ શાળા બાકી નથી.</td></tr>') +
+        '</tbody></table></div></div>';
+    }
+    dashRoot().innerHTML = html;
+
+    dashRoot().querySelectorAll('[data-scrumb]').forEach(function (b) {
+      b.addEventListener('click', function () { var p = d.path[Number(b.getAttribute('data-scrumb'))]; renderSetup({ level: p.level, id: p.id }); });
+    });
+    dashRoot().querySelectorAll('[data-sdrill]').forEach(function (b) {
+      b.addEventListener('click', function () { renderSetup({ level: b.getAttribute('data-slevel'), id: b.getAttribute('data-sdrill') }); });
+    });
+    dashRoot().querySelectorAll('[data-setup-f]').forEach(function (b) {
+      b.addEventListener('click', function () { setupView.filter = b.getAttribute('data-setup-f'); drawSetup(); });
+    });
+    var xl = dashRoot().querySelector('[data-setup-xl]');
+    if (xl) xl.addEventListener('click', function () { downloadSetupXl(d); });
+  }
+
+  function downloadSetupXl(d) {
+    var isSchool = d.children[0].level === 'school';
+    var head = isSchool ? ['શાળાનું નામ', 'ડાયસ કોડ', 'પાસવર્ડ બદલ્યો', 'FLN સિદ્ધ બાળકો', 'સક્રિય બાળકો']
+      : [LEVEL_LABELS[d.children[0].level], 'શાળાઓ', 'પાસવર્ડ બદલનાર શાળા', 'FLN ✓ કરનાર શાળા', 'FLN સિદ્ધ બાળકો', 'સક્રિય બાળકો'];
+    var rows = d.children.map(function (u) {
+      return isSchool ? [u.name, u.id, u.changed ? 'હા' : 'ના', u.fln, u.active]
+        : [u.name, u.schools, u.changed, u.flnSchools, u.fln, u.active];
+    });
+    downloadXlsx('શાળા-તૈયારી-' + d.unit.name + '.xlsx', [{ name: 'શાળા તૈયારી', rows: [head].concat(rows) }])
+      .catch(function () { alert('Excel બનાવી ન શકાયું. નેટ ચાલુ છે કે નહીં તપાસો.'); });
   }
 
   function kpi(icon, label, value) {
