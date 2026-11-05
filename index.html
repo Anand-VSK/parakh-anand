@@ -445,6 +445,20 @@
   .admin-card h2 { gap: 4px; }
 
   /* --- શાળા વ્યવસ્થા (ADMIN) --- */
+  .sa-head-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sa-tabs { margin-bottom: 14px; }
+  .sa-btns { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .sa-count { display: flex; flex-direction: column; align-items: center; min-width: 54px; flex-shrink: 0; }
+  .sa-count b { font-size: 1.25rem; line-height: 1.2; }
+  .sa-count .muted { margin: 0; }
+  .sa-check { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #334155; margin: 10px 0; }
+  .sa-center { justify-content: center; }
+  .ck-lines { list-style: none; margin: 0; padding: 0; }
+  .ck-lines li { display: flex; align-items: flex-start; gap: 4px; padding: 6px 0; line-height: 1.6; overflow-wrap: anywhere; }
+  .ck-good .ms { color: #16a34a; } .ck-bad .ms { color: #dc2626; } .ck-warn .ms { color: #d97706; } .ck-info .ms { color: #4f46e5; }
+  .info-light { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; border-radius: 12px; padding: 10px 12px; margin-top: 8px; font-weight: 600; }
+  .school-notice { display: flex; align-items: flex-start; gap: 4px; background: #fffbeb; border: 1px solid #fde68a; color: #78350f; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; font-weight: 700; white-space: pre-line; overflow-wrap: anywhere; }
+  .school-notice .ms { color: #d97706; }
   .sa-tools { display: grid; grid-template-columns: 1fr 200px; gap: 10px; margin-bottom: 12px; }
   @media (max-width: 560px) { .sa-tools { grid-template-columns: 1fr; } }
   .sa-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; }
@@ -456,7 +470,7 @@
   .sa-phone { display: inline-flex; align-items: center; font-size: .85rem; color: #334155; }
   .sa-phone .ms { font-size: 1.05em; color: #16a34a; }
   .sa-phone.none { color: #b45309; }
-  @media (max-width: 480px) { .sa-row { flex-direction: column; align-items: stretch; } .sa-row .btn-small { justify-content: center; } }
+  @media (max-width: 480px) { .sa-row { flex-wrap: wrap; } .sa-row .sa-main { flex-basis: 100%; } .sa-btns { width: 100%; } .sa-btns .btn-small { flex: 1; justify-content: center; } }
   .sa-login { border-color: #86efac; }
   .sa-login h2 .ms { color: #16a34a; }
   .sa-cred { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 10px 0; }
@@ -544,9 +558,9 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport","apiSetupStatus","apiAdminSchools","apiAdminCreateLogin","apiAdminAddSchool","apiAdminResetPassword","apiAdminSaveMobile"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport","apiSetupStatus","apiAdminSchools","apiAdminCreateLogin","apiAdminAddSchool","apiAdminResetPassword","apiAdminSaveMobile","apiAdminCheckLogin","apiAdminReadiness","apiAdminUpdateSchool","apiAdminSystem","apiAdminNotice","apiAdminSaveNotice"];
   var TIMEOUT_MS = 45000;
-  var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000};
+  var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000,"apiAdminReadiness":90000,"apiAdminSystem":90000};
   function call(fn, args, success, failure) {
     // સર્વર જવાબ ન આપે તો સ્ક્રીન કાયમ "ચાલુ છે..." પર ન રહે.
     var finished = false;
@@ -1314,6 +1328,26 @@
     return [['LO કોડ', 'LO', 'પ્રશ્નો', 'સાચાનો %']].concat((d.lo || []).map(function (l) { return [l.lo, l.name || '', l.n, blank(l.pct)]; }));
   }
 
+  // ID બન્યું છે પણ પહેલો પાસવર્ડ બદલ્યો નથી એવી શાળાઓ (તાલુકો → CRC → નામ). પાસવર્ડ આ ફાઇલમાં નહીં.
+  function unchangedSchoolRowsForExcel(schools) {
+    var list = schools.filter(function (s) { return s.hasLogin && !s.changed; }).sort(function (a, b) {
+      return a.taluka.localeCompare(b.taluka) || a.crc.localeCompare(b.crc) || a.name.localeCompare(b.name);
+    });
+    return [['ક્રમ', 'તાલુકો', 'CRC કોડ', 'CRC નામ', 'ડાયસ કોડ', 'શાળાનું નામ', 'પ્રકાર', 'મોબાઇલ', 'શાળાની સ્થિતિ']].concat(list.map(function (s, i) {
+      return [i + 1, s.taluka, s.crc, s.crcName, s.dise, s.name, s.type, s.mobile, s.active ? 'ચાલુ' : 'બંધ'];
+    }));
+  }
+
+  // શાળા તૈયારી: જે યાદી સ્ક્રીન પર પસંદ કરી હોય તે (તાલુકો → CRC → નામ).
+  function readinessRowsForExcel(schools) {
+    var list = schools.slice().sort(function (a, b) {
+      return a.taluka.localeCompare(b.taluka) || a.crc.localeCompare(b.crc) || a.name.localeCompare(b.name);
+    });
+    return [['ક્રમ', 'તાલુકો', 'CRC કોડ', 'CRC નામ', 'ડાયસ કોડ', 'શાળાનું નામ', 'મોબાઇલ', 'ચાલુ બાળકો', 'FLN ✓ બાળકો']].concat(list.map(function (s, i) {
+      return [i + 1, s.taluka, s.crc, s.crcName, s.dise, s.name, s.mobile, s.students, s.fln];
+    }));
+  }
+
   function statusRowsForExcel(r) {
     return [['રોલ નંબર', 'નામ', 'સ્થિતિ', 'પહેલો ગુણ', 'શ્રેષ્ઠ ગુણ', 'કુલ', 'પ્રયત્નો']].concat((r.students || []).map(function (s) {
       return [s.roll, s.name, s.status, blank(s.first), blank(s.best), blank(s.total), s.attempts];
@@ -1832,7 +1866,8 @@
     if (state.session.role === 'DIET') tabs.push(['quiz', 'quiz', 'ક્વિઝ']);
     if (state.session.role === 'SCHOOL') tabs.push(['roster', 'groups', 'વિદ્યાર્થીઓ']);
     else tabs.push(['setup', 'fact_check', 'શાળા તૈયારી']);
-    $('app-home').innerHTML = '<div class="tabs light-tabs home-tabs" style="grid-template-columns:repeat(' + tabs.length + ',1fr)">' +
+    $('app-home').innerHTML = (state.notice ? '<div class="school-notice">' + dm('campaign') + '<span>' + escapeHtml(state.notice) + '</span></div>' : '') +
+      '<div class="tabs light-tabs home-tabs" style="grid-template-columns:repeat(' + tabs.length + ',1fr)">' +
       tabs.map(function (t, i) {
         return '<button type="button" class="tab' + (i ? '' : ' active') + '" data-home="' + t[0] + '">' + dm(t[1]) + t[2] + '</button>';
       }).join('') + '</div><div id="tab-body"></div>';
@@ -3232,8 +3267,12 @@
 </script>
 
   <script>
-  // પરખ – આણંદ : "શાળા વ્યવસ્થા" (ફક્ત ADMIN) — રહી ગયેલી શાળાનું ID, નવી શાળા, પાસવર્ડ reset, WhatsApp.
-  var sa = { data: null, q: '', filter: 'all', taluka: '', limit: 50, login: null, adding: false, busy: false };
+  // પરખ – આણંદ : "શાળા વ્યવસ્થા" (ફક્ત ADMIN) — શાળાઓ (ID, પાસવર્ડ, WhatsApp, સુધારો), તૈયારી, લોગીન તપાસ, સિસ્ટમ, સૂચના.
+  var sa = { tab: 'schools', data: null, q: '', filter: 'all', taluka: '', limit: 50, login: null, adding: false, editing: null, busy: false, seq: 0,
+    rd: { data: null, filter: 'nokids', q: '', taluka: '', limit: 50 }, checkId: '' };
+  var SA_TABS = [['schools', 'school', 'શાળાઓ'], ['ready', 'fact_check', 'તૈયારી'], ['check', 'manage_search', 'લોગીન તપાસ'],
+    ['system', 'monitor_heart', 'સિસ્ટમ'], ['notice', 'campaign', 'સૂચના']];
+  var SA_READY_FILTERS = [['nokids', 'બાળકો ઉમેર્યાં નથી'], ['nofln', 'FLN ✓ નથી'], ['ready', 'તૈયાર'], ['all', 'બધી']];
   var SA_FILTERS = [['all', 'બધી'], ['noid', 'ID બાકી'], ['unchanged', 'પાસવર્ડ બદલ્યો નથી'], ['nomobile', 'મોબાઇલ બાકી']];
 
   function saFits(s, filter) {
@@ -3256,23 +3295,57 @@
     return 'https://wa.me/' + (mobile ? '91' + mobile : '') + '?text=' + encodeURIComponent(message);
   }
 
+  function saLoading(text) {
+    $('sa-body').innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">' + text + '</p></div>';
+  }
+
+  function saError(message) {
+    $('sa-body').innerHTML = '<div class="error-card">' + escapeHtml(message) + '</div>';
+  }
+
+  // જલદી ટેબ બદલો તો જૂનો (મોડો આવેલો) જવાબ નવી ટેબ પર ન લખાય.
+  function saCall(fnName, args, onOk) {
+    var seq = ++sa.seq;
+    callServer.apply(null, [fnName, getToken()].concat(args)).then(function (r) {
+      if (seq !== sa.seq || !$('sa-body')) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) { saError(r.message); return; }
+      onOk(r);
+    });
+  }
+
   function renderSchoolAdmin() {
     sa.login = null;
     sa.adding = false;
-    $('app-home').innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">શાળાઓની યાદી આવી રહી છે...</p></div>';
-    callServer('apiAdminSchools', getToken()).then(function (r) {
-      if (handleExpired(r)) return;
-      if (!r.ok) { $('app-home').innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
-      sa.data = r;
-      drawSchoolAdmin();
+    sa.editing = null;
+    $('app-home').innerHTML = '<div class="chips sa-tabs">' + SA_TABS.map(function (t) {
+      return '<button type="button" class="chip" data-sa-tab="' + t[0] + '">' + dm(t[1]) + t[2] + '</button>';
+    }).join('') + '</div><div id="sa-body"></div>';
+    document.querySelectorAll('[data-sa-tab]').forEach(function (b) {
+      b.addEventListener('click', function () { openSaTab(b.getAttribute('data-sa-tab')); });
     });
+    openSaTab('schools');
+  }
+
+  function openSaTab(tab) {
+    sa.tab = tab;
+    sa.seq++;
+    document.querySelectorAll('[data-sa-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-sa-tab') === tab); });
+    if (tab === 'ready') { openReadiness(); return; }
+    if (tab === 'check') { drawLoginCheck(); return; }
+    if (tab === 'system') { openSystem(); return; }
+    if (tab === 'notice') { openNotice(); return; }
+    if (sa.data) { drawSchoolAdmin(); return; }
+    saLoading('શાળાઓની યાદી આવી રહી છે...');
+    saCall('apiAdminSchools', [], function (r) { sa.data = r; drawSchoolAdmin(); });
   }
 
   function drawSchoolAdmin() {
     var problems = sa.data.problems;
-    $('app-home').innerHTML =
+    $('sa-body').innerHTML =
       '<div class="admin-head"><h2 class="admin-title">' + dm('manage_accounts') + 'શાળા વ્યવસ્થા</h2>' +
-      '<button type="button" class="btn-small" id="sa-add">' + dm('add_business') + 'નવી શાળા ઉમેરો</button></div>' +
+      '<div class="sa-head-btns"><button type="button" class="btn-ghost" id="sa-xl">' + dm('download') + 'પાસવર્ડ ન બદલેલી શાળાઓ (Excel)</button>' +
+      '<button type="button" class="btn-small" id="sa-add">' + dm('add_business') + 'નવી શાળા ઉમેરો</button></div></div>' +
       '<div id="sa-login"></div><div id="sa-form"></div>' +
       (problems.length ? '<details class="sa-problems"><summary>' + dm('warning') + problems.length + ' હરોળમાં ભૂલ — તેનું ID બરાબર નહીં બને</summary><ul>' +
         problems.map(function (p) { return '<li>હરોળ ' + escapeHtml(p.row) + (p.name ? ' · ' + escapeHtml(p.name) : '') + ': ' + escapeHtml(p.message) + '</li>'; }).join('') +
@@ -3282,12 +3355,22 @@
       '<select id="sa-taluka" class="field" aria-label="તાલુકો"><option value="">બધા તાલુકા</option>' +
       sa.data.talukas.map(function (t) { return '<option' + (t === sa.taluka ? ' selected' : '') + '>' + escapeHtml(t) + '</option>'; }).join('') + '</select></div>' +
       '<div id="sa-list"></div>';
-    $('sa-add').addEventListener('click', function () { sa.adding = !sa.adding; drawSchoolForm(); });
+    $('sa-add').addEventListener('click', function () { sa.adding = !sa.adding; sa.editing = null; drawSchoolForm(); });
+    $('sa-xl').addEventListener('click', downloadUnchangedSchools);
     $('sa-q').addEventListener('input', function () { sa.q = this.value; sa.limit = 50; drawSchoolList(); });
     $('sa-taluka').addEventListener('change', function () { sa.taluka = this.value; sa.limit = 50; drawSchoolList(); });
     drawLoginCard();
     drawSchoolForm();
     drawSchoolList();
+  }
+
+  // સ્ક્રીન પર પસંદ કરેલો તાલુકો/શોધ લાગુ પડે: "પાસવર્ડ બદલ્યો નથી" ની સંખ્યા જેટલી જ શાળાઓ ફાઇલમાં.
+  function downloadUnchangedSchools() {
+    var rows = unchangedSchoolRowsForExcel(saMatches());
+    if (rows.length < 2) { alert('આ પસંદગીમાં પાસવર્ડ ન બદલેલી કોઈ શાળા નથી.'); return; }
+    var name = 'પાસવર્ડ-ન-બદલેલી-શાળાઓ' + (sa.taluka ? '-' + sa.taluka : '') + '.xlsx';
+    downloadXlsx(name, [{ name: 'પાસવર્ડ ન બદલેલી શાળાઓ', rows: rows }])
+      .catch(function () { alert('Excel બનાવી ન શકાયું. નેટ ચાલુ છે કે નહીં તપાસો.'); });
   }
 
   function saMatches() {
@@ -3322,12 +3405,25 @@
       return '<div class="sa-row"><div class="sa-main"><p class="sa-name">' + escapeHtml(s.name || '(નામ નથી)') + '</p>' +
         '<p class="muted">' + s.dise + ' · ' + escapeHtml(s.taluka) + (s.crcName || s.crc ? ' · CRC ' + escapeHtml(s.crcName || s.crc) : '') + '</p>' +
         '<div class="sa-tags">' + saStatus(s) + '</div></div>' +
+        '<div class="sa-btns"><button type="button" class="icon-btn" data-edit="' + s.dise + '" aria-label="શાળાની વિગત સુધારો" title="શાળાની વિગત સુધારો">' + dm('edit') + '</button>' +
+        '<button type="button" class="icon-btn" data-check="' + s.dise + '" aria-label="લોગીન તપાસો" title="લોગીન તપાસો">' + dm('manage_search') + '</button>' +
         '<button type="button" class="btn-small" data-dise="' + s.dise + '">' +
-        (s.hasLogin ? dm('lock_reset') + 'નવો પાસવર્ડ' : dm('person_add') + 'ID બનાવો') + '</button></div>';
+        (s.hasLogin ? dm('lock_reset') + 'નવો પાસવર્ડ' : dm('person_add') + 'ID બનાવો') + '</button></div></div>';
     }).join('') : '<div class="admin-card text-center muted">આ શોધમાં કોઈ શાળા નથી.</div>') +
       (rows.length > sa.limit ? '<button type="button" class="btn-link" id="sa-more">બીજી શાળાઓ બતાવો (' + (rows.length - sa.limit).toLocaleString('en-IN') + ' બાકી)</button>' : '');
     $('sa-list').querySelectorAll('[data-dise]').forEach(function (b) {
       b.addEventListener('click', function () { schoolAction(b.getAttribute('data-dise'), b); });
+    });
+    $('sa-list').querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        sa.editing = b.getAttribute('data-edit');
+        sa.adding = false;
+        drawSchoolForm();
+        $('sa-form').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+    });
+    $('sa-list').querySelectorAll('[data-check]').forEach(function (b) {
+      b.addEventListener('click', function () { sa.checkId = b.getAttribute('data-check'); openSaTab('check'); runLoginCheck(); });
     });
     if ($('sa-more')) $('sa-more').addEventListener('click', function () { sa.limit += 100; drawSchoolList(); });
   }
@@ -3420,27 +3516,33 @@
 
   function drawSchoolForm() {
     var box = $('sa-form');
-    if (!sa.adding) { box.innerHTML = ''; return; }
+    var old = sa.editing ? saSchool(sa.editing) : null;
+    if (!sa.adding && !old) { box.innerHTML = ''; return; }
+    function val(k) { return old ? escapeHtml(old[k]) : ''; }
+    function opts(list, current) {
+      return list.map(function (t) { return '<option' + (t === current ? ' selected' : '') + '>' + escapeHtml(t) + '</option>'; }).join('');
+    }
     var crcs = {};
     sa.data.schools.forEach(function (s) { if (s.crc) crcs[s.crc] = s.crcName; });
-    box.innerHTML = '<form class="admin-card" id="sa-new" novalidate><h2>' + dm('add_business') + 'નવી શાળા ઉમેરો</h2>' +
-      '<p class="muted">શાળા યાદીમાં ઉમેરાશે અને તેનું ID તરત બનશે.</p><div class="form-grid">' +
-      '<label>ડાયસ કોડ<input id="sn-dise" class="field" inputmode="numeric" maxlength="16" autocomplete="off"></label>' +
-      '<label class="span2">શાળાનું નામ<input id="sn-name" class="field" maxlength="120" autocomplete="off"></label>' +
-      '<label>તાલુકો<select id="sn-taluka" class="field"><option value="">પસંદ કરો</option>' + sa.data.talukas.map(function (t) { return '<option>' + escapeHtml(t) + '</option>'; }).join('') + '</select></label>' +
-      '<label>CRC કોડ<input id="sn-crc" class="field" list="sn-crcs" maxlength="30" autocomplete="off"><datalist id="sn-crcs">' +
+    box.innerHTML = '<form class="admin-card" id="sa-new" novalidate><h2>' + (old ? dm('edit') + 'શાળાની વિગત સુધારો' : dm('add_business') + 'નવી શાળા ઉમેરો') + '</h2>' +
+      '<p class="muted">' + (old ? 'ડાયસ કોડ બદલાતો નથી અને શાળાનો પાસવર્ડ એ જ રહે છે.' : 'શાળા યાદીમાં ઉમેરાશે અને તેનું ID તરત બનશે.') + '</p><div class="form-grid">' +
+      '<label>ડાયસ કોડ<input id="sn-dise" class="field" inputmode="numeric" maxlength="16" autocomplete="off" value="' + val('dise') + '"' + (old ? ' readonly' : '') + '></label>' +
+      '<label class="span2">શાળાનું નામ<input id="sn-name" class="field" maxlength="120" autocomplete="off" value="' + val('name') + '"></label>' +
+      '<label>તાલુકો<select id="sn-taluka" class="field"><option value="">પસંદ કરો</option>' + opts(sa.data.talukas, old && old.taluka) + '</select></label>' +
+      '<label>CRC કોડ<input id="sn-crc" class="field" list="sn-crcs" maxlength="30" autocomplete="off" value="' + val('crc') + '"><datalist id="sn-crcs">' +
       Object.keys(crcs).sort().map(function (k) { return '<option value="' + escapeHtml(k) + '">' + escapeHtml(crcs[k]) + '</option>'; }).join('') + '</datalist></label>' +
-      '<label>CRC નામ<input id="sn-crcname" class="field" maxlength="80" autocomplete="off"></label>' +
-      '<label>શાળાનો પ્રકાર<select id="sn-type" class="field"><option value="">પસંદ કરો</option>' + sa.data.types.map(function (t) { return '<option>' + escapeHtml(t) + '</option>'; }).join('') + '</select></label>' +
-      '<label>મોબાઇલ (WhatsApp)<input id="sn-mobile" class="field" inputmode="tel" maxlength="16" autocomplete="off"></label></div>' +
+      '<label>CRC નામ<input id="sn-crcname" class="field" maxlength="80" autocomplete="off" value="' + val('crcName') + '"></label>' +
+      '<label>શાળાનો પ્રકાર<select id="sn-type" class="field"><option value="">પસંદ કરો</option>' + opts(sa.data.types, old && old.type) + '</select></label>' +
+      '<label>મોબાઇલ (WhatsApp)<input id="sn-mobile" class="field" inputmode="tel" maxlength="16" autocomplete="off" value="' + val('mobile') + '"></label></div>' +
+      (old ? '<label class="sa-check"><input type="checkbox" id="sn-active"' + (old.active ? ' checked' : '') + '>શાળા ચાલુ છે (બંધ કરતાં શાળા અને તેનાં બાળકો લોગીન નહીં કરી શકે)</label>' : '') +
       '<div class="error-card hidden" data-error></div>' +
       '<div class="row-actions"><button type="button" class="btn-ghost" id="sn-cancel">રદ કરો</button>' +
-      '<button type="submit" class="btn-small">' + dm('save') + 'શાળા ઉમેરો અને ID બનાવો</button></div></form>';
+      '<button type="submit" class="btn-small">' + dm('save') + (old ? 'ફેરફાર સાચવો' : 'શાળા ઉમેરો અને ID બનાવો') + '</button></div></form>';
     $('sn-crc').addEventListener('change', function () {
       var name = crcs[this.value.trim().toUpperCase()];
       if (name && !$('sn-crcname').value) $('sn-crcname').value = name;
     });
-    $('sn-cancel').addEventListener('click', function () { sa.adding = false; drawSchoolForm(); });
+    $('sn-cancel').addEventListener('click', function () { sa.adding = false; sa.editing = null; drawSchoolForm(); });
     $('sa-new').addEventListener('submit', submitNewSchool);
   }
 
@@ -3451,6 +3553,7 @@
     var school = { dise: $('sn-dise').value, name: $('sn-name').value, taluka: $('sn-taluka').value, crc: $('sn-crc').value,
       crcName: $('sn-crcname').value, type: $('sn-type').value, mobile: $('sn-mobile').value };
     setError(form, '');
+    if (sa.editing) { saveSchoolEdit(form, btn, school); return; }
     btn.disabled = true;
     callServer('apiAdminAddSchool', getToken(), school).then(function (r) {
       btn.disabled = false;
@@ -3464,12 +3567,215 @@
       drawSchoolList();
     });
   }
+
+  function saveSchoolEdit(form, btn, school) {
+    var old = saSchool(sa.editing);
+    school.active = $('sn-active').checked;
+    if (old.active && !school.active && !window.confirm(old.name + '\n\nશાળા બંધ કરવી છે? શાળા અને તેનાં બાળકો લોગીન નહીં કરી શકે.')) return;
+    btn.disabled = true;
+    callServer('apiAdminUpdateSchool', getToken(), old.dise, school).then(function (r) {
+      btn.disabled = false;
+      if (handleExpired(r)) return;
+      if (!r.ok) { setError(form, r.message); return; }
+      Object.keys(r.school).forEach(function (k) { old[k] = r.school[k]; });
+      sa.editing = null;
+      sa.rd.data = null;
+      drawSchoolForm();
+      drawSchoolList();
+      if (r.extra) alert('આ ક્લસ્ટર/તાલુકાનાં ' + r.extra + ' નવાં CRC/BRC ID પણ બન્યાં છે (પાસવર્ડ યાદીમાં જુઓ).');
+    });
+  }
+
+  // --- શાળા તૈયારી ---
+
+  function rdFits(s, filter) {
+    if (filter === 'nokids') return !s.students;
+    if (filter === 'nofln') return s.students > 0 && !s.fln;
+    if (filter === 'ready') return s.fln > 0;
+    return true;
+  }
+
+  function rdMatches() {
+    var rd = sa.rd;
+    var q = rd.q.trim().toLowerCase();
+    return rd.data.schools.filter(function (s) {
+      if (rd.taluka && s.taluka !== rd.taluka) return false;
+      return !q || (s.dise + ' ' + s.name + ' ' + s.crc + ' ' + s.crcName).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function openReadiness() {
+    if (sa.rd.data) { drawReadiness(); return; }
+    saLoading('શાળાવાર બાળકોની ગણતરી ચાલુ છે...');
+    saCall('apiAdminReadiness', [], function (r) { sa.rd.data = r; drawReadiness(); });
+  }
+
+  function drawReadiness() {
+    var rd = sa.rd;
+    $('sa-body').innerHTML = '<div class="admin-head"><h2 class="admin-title">' + dm('fact_check') + 'શાળા તૈયારી</h2>' +
+      '<button type="button" class="btn-ghost" id="rd-xl">' + dm('download') + 'આ યાદી Excel</button></div>' +
+      '<p class="muted">ચાલુ શાળાઓ જ. આંકડા 5 મિનિટ જૂના હોઈ શકે.</p>' +
+      '<div class="chips" id="rd-chips"></div>' +
+      '<div class="sa-tools"><input id="rd-q" class="field" placeholder="ડાયસ કોડ, શાળા કે CRC શોધો" value="' + escapeHtml(rd.q) + '" autocomplete="off">' +
+      '<select id="rd-taluka" class="field" aria-label="તાલુકો"><option value="">બધા તાલુકા</option>' +
+      rd.data.talukas.map(function (t) { return '<option' + (t === rd.taluka ? ' selected' : '') + '>' + escapeHtml(t) + '</option>'; }).join('') + '</select></div>' +
+      '<div id="rd-list"></div>';
+    $('rd-q').addEventListener('input', function () { rd.q = this.value; rd.limit = 50; drawReadinessList(); });
+    $('rd-taluka').addEventListener('change', function () { rd.taluka = this.value; rd.limit = 50; drawReadinessList(); });
+    $('rd-xl').addEventListener('click', function () {
+      var list = rdMatches().filter(function (s) { return rdFits(s, rd.filter); });
+      if (!list.length) { alert('આ યાદીમાં કોઈ શાળા નથી.'); return; }
+      var label = SA_READY_FILTERS.filter(function (f) { return f[0] === rd.filter; })[0][1];
+      var name = 'શાળા-તૈયારી-' + label.replace(/[\s✓]+/g, '-') + (rd.taluka ? '-' + rd.taluka : '') + '.xlsx';
+      downloadXlsx(name, [{ name: 'શાળા તૈયારી', rows: readinessRowsForExcel(list) }])
+        .catch(function () { alert('Excel બનાવી ન શકાયું. નેટ ચાલુ છે કે નહીં તપાસો.'); });
+    });
+    drawReadinessList();
+  }
+
+  function drawReadinessList() {
+    var rd = sa.rd;
+    var matches = rdMatches();
+    $('rd-chips').innerHTML = SA_READY_FILTERS.map(function (f) {
+      var n = matches.filter(function (s) { return rdFits(s, f[0]); }).length;
+      return '<button type="button" class="chip' + (rd.filter === f[0] ? ' on' : '') + '" data-rd="' + f[0] + '">' + f[1] + ' (' + n.toLocaleString('en-IN') + ')</button>';
+    }).join('');
+    $('rd-chips').querySelectorAll('[data-rd]').forEach(function (b) {
+      b.addEventListener('click', function () { rd.filter = b.getAttribute('data-rd'); rd.limit = 50; drawReadinessList(); });
+    });
+    var rows = matches.filter(function (s) { return rdFits(s, rd.filter); });
+    $('rd-list').innerHTML = (rows.length ? rows.slice(0, rd.limit).map(function (s) {
+      return '<div class="sa-row"><div class="sa-main"><p class="sa-name">' + escapeHtml(s.name || '(નામ નથી)') + '</p>' +
+        '<p class="muted">' + s.dise + ' · ' + escapeHtml(s.taluka) + (s.crcName || s.crc ? ' · CRC ' + escapeHtml(s.crcName || s.crc) : '') + '</p>' +
+        '<div class="sa-tags">' + (s.mobile ? '<span class="sa-phone">' + dm('call') + escapeHtml(s.mobile) + '</span>' : '<span class="sa-phone none">મોબાઇલ નથી</span>') + '</div></div>' +
+        '<div class="sa-count"><b>' + s.students + '</b><span class="muted">બાળકો</span></div>' +
+        '<div class="sa-count"><b>' + s.fln + '</b><span class="muted">FLN ✓</span></div></div>';
+    }).join('') : '<div class="admin-card text-center muted">આ યાદીમાં કોઈ શાળા નથી.</div>') +
+      (rows.length > rd.limit ? '<button type="button" class="btn-link" id="rd-more">બીજી શાળાઓ બતાવો (' + (rows.length - rd.limit).toLocaleString('en-IN') + ' બાકી)</button>' : '');
+    if ($('rd-more')) $('rd-more').addEventListener('click', function () { rd.limit += 100; drawReadinessList(); });
+  }
+
+  // --- લોગીન તપાસ ---
+
+  function drawLoginCheck() {
+    $('sa-body').innerHTML = '<form class="admin-card" id="ck-form" novalidate><h2>' + dm('manage_search') + 'લોગીન તપાસ</h2>' +
+      '<p class="muted">શાળાનો ડાયસ કોડ કે લોગીન ID લખો. પાસવર્ડ બતાવ્યા વગર કારણ દેખાશે.</p>' +
+      '<div class="sa-tools"><input id="ck-id" class="field" autocomplete="off" placeholder="ડાયસ કોડ અથવા લોગીન ID" value="' + escapeHtml(sa.checkId) + '">' +
+      '<button type="submit" class="btn-small sa-center">' + dm('search') + 'તપાસો</button></div></form><div id="ck-result"></div>';
+    $('ck-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      sa.checkId = $('ck-id').value.trim();
+      if (sa.checkId) runLoginCheck();
+    });
+  }
+
+  // સર્વરની લીટીઓની શરૂઆતનું ચિહ્ન → Material આઇકોન.
+  function checkLine(text) {
+    var icons = [['\u2705', 'check_circle', 'good'], ['\u274C', 'cancel', 'bad'], ['\u26D4', 'block', 'bad'], ['\u26A0\uFE0F', 'warning', 'warn'], ['\u2139\uFE0F', 'info', 'info']];
+    var hit = icons.filter(function (i) { return text.indexOf(i[0]) === 0; })[0] || ['', 'info', 'info'];
+    return '<li class="ck-' + hit[2] + '">' + dm(hit[1]) + '<span>' + escapeHtml(text.slice(hit[0].length).trim()) + '</span></li>';
+  }
+
+  function runLoginCheck() {
+    var box = $('ck-result');
+    box.innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div></div>';
+    var seq = ++sa.seq;
+    callServer('apiAdminCheckLogin', getToken(), sa.checkId).then(function (r) {
+      if (seq !== sa.seq || !$('ck-result')) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) { box.innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      box.innerHTML = '<div class="admin-card"><ul class="ck-lines">' + r.lines.map(checkLine).join('') + '</ul>' +
+        (r.canReset ? '<div class="row-actions wrap"><button type="button" class="btn-small" id="ck-reset">' + dm('lock_reset') + 'નવો પાસવર્ડ બનાવો</button></div>' : '') + '</div>';
+      if (r.canReset) $('ck-reset').addEventListener('click', function () { resetFromCheck(r.dise); });
+    });
+  }
+
+  function resetFromCheck(dise) {
+    sa.q = dise;
+    sa.filter = 'all';
+    sa.taluka = '';
+    sa.limit = 50;
+    var go = function () {
+      var b = document.querySelector('[data-dise="' + dise + '"]');
+      if (b) schoolAction(dise, b);
+    };
+    if (sa.data) { openSaTab('schools'); go(); return; }
+    openSaTab('schools');
+    saCall('apiAdminSchools', [], function (r) { sa.data = r; drawSchoolAdmin(); go(); });
+  }
+
+  // --- સિસ્ટમ તંદુરસ્તી ---
+
+  // ભરાવાનો પટ્ટો: વધુ ભરાય એ ખરાબ (ગુણના પટ્ટાથી ઊલટું).
+  function fillBar(p) {
+    return '<div class="dbar"><div class="' + (p >= 80 ? 'low' : p >= 60 ? 'mid' : 'high') + '" style="width:' + Math.min(Number(p) || 0, 100) + '%"></div></div>';
+  }
+
+  function saNum(v) { return Number(v || 0).toLocaleString('en-IN'); }
+
+  function openSystem() {
+    saLoading('Spreadsheet અને પરિણામ ફાઇલો તપાસાઈ રહી છે...');
+    saCall('apiAdminSystem', [], drawSystem);
+  }
+
+  function drawSystem(r) {
+    var full = [r.size.percent].concat(r.files.map(function (f) { return f.percent; }));
+    $('sa-body').innerHTML = '<div class="admin-head"><h2 class="admin-title">' + dm('monitor_heart') + 'સિસ્ટમ તંદુરસ્તી</h2>' +
+      '<button type="button" class="btn-ghost" id="sy-again">' + dm('refresh') + 'ફરી તપાસો</button></div>' +
+      (Math.max.apply(null, full) >= 80 ? '<div class="warn-light">' + dm('warning') + '80% થી વધુ ભરાયું છે — તરત ડેવલપરનો સંપર્ક કરો.</div>' : '') +
+      '<div class="kpis">' + kpi('school', 'કુલ શાળાઓ', saNum(r.schools)) + kpi('task_alt', 'સેવ થયેલા પ્રયત્નો', saNum(r.attempts)) +
+      kpi('database', 'મુખ્ય Spreadsheet ભરાઈ', r.size.percent + '%') + kpi('hourglass_bottom', 'મુખ્યમાં હજુ સમાય (પ્રયત્નો)', saNum(r.size.attemptsLeft)) + '</div>' +
+      '<div class="admin-card"><h2>' + dm('database') + 'મુખ્ય Spreadsheet</h2>' + fillBar(r.size.percent) +
+      '<p class="muted">' + saNum(r.size.total) + ' / ' + saNum(r.size.limit) + ' ખાનાં</p>' +
+      '<table class="summary-table"><thead><tr><th>Sheet</th><th>હરોળ</th><th>ખાનાં</th></tr></thead><tbody>' +
+      r.size.sheets.map(function (s) { return '<tr><td>' + escapeHtml(s.name) + '</td><td>' + saNum(s.rows) + '</td><td>' + saNum(s.cells) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' +
+      '<div class="admin-card"><h2>' + dm('folder_copy') + 'તાલુકાવાર પરિણામ ફાઇલો</h2>' + (r.files.length
+        ? '<table class="summary-table"><thead><tr><th>તાલુકો</th><th>પ્રયત્નો</th><th>ભરાઈ</th></tr></thead><tbody>' +
+          r.files.map(function (f) { return '<tr><td>' + escapeHtml(f.taluka) + '</td><td>' + saNum(f.attempts) + '</td><td>' + fillBar(f.percent) + f.percent + '%</td></tr>'; }).join('') + '</tbody></table>'
+        : '<div class="warn-light">' + dm('info') + 'તાલુકાવાર ફાઇલો બની નથી: બધાં પરિણામ મુખ્ય Spreadsheet માં જાય છે. Sheet ના "પરખ" મેનુમાંથી બનાવી શકાય.</div>') + '</div>';
+    $('sy-again').addEventListener('click', openSystem);
+  }
+
+  // --- શાળાઓને સૂચના ---
+
+  function openNotice() {
+    saLoading('સૂચના આવી રહી છે...');
+    saCall('apiAdminNotice', [], function (r) { drawNotice(r.notice); });
+  }
+
+  function drawNotice(text) {
+    $('sa-body').innerHTML = '<form class="admin-card" id="nt-form" novalidate><h2>' + dm('campaign') + 'શાળાઓને સૂચના</h2>' +
+      '<p class="muted">શાળા લોગીન કરે ત્યારે ઉપર દેખાશે. બાળકો અને અધિકારીઓને નહીં દેખાય.</p>' +
+      '<textarea id="nt-text" class="field area" rows="5" maxlength="500" placeholder="દા.ત. આવતીકાલે સવારે 10 વાગ્યે પરખ ટેસ્ટ છે.">' + escapeHtml(text) + '</textarea>' +
+      '<p class="muted" id="nt-count"></p><div class="error-card hidden" data-error></div><div class="info-light hidden" id="nt-done"></div>' +
+      '<div class="row-actions"><button type="button" class="btn-ghost danger" id="nt-clear">' + dm('delete') + 'સૂચના કાઢો</button>' +
+      '<button type="submit" class="btn-small">' + dm('send') + 'સૂચના સાચવો</button></div></form>';
+    function count() { $('nt-count').textContent = $('nt-text').value.length + ' / 500 અક્ષર'; }
+    function save(value) {
+      var form = $('nt-form');
+      setError(form, '');
+      $('nt-done').classList.add('hidden');
+      callServer('apiAdminSaveNotice', getToken(), value).then(function (r) {
+        if (handleExpired(r) || !$('nt-form')) return;
+        if (!r.ok) { setError(form, r.message); return; }
+        $('nt-text').value = r.notice;
+        count();
+        $('nt-done').textContent = r.notice ? 'સૂચના સચવાઈ. હવે લોગીન કરતી શાળાઓને દેખાશે.' : 'સૂચના કાઢી નાખી.';
+        $('nt-done').classList.remove('hidden');
+      });
+    }
+    $('nt-text').addEventListener('input', count);
+    $('nt-form').addEventListener('submit', function (e) { e.preventDefault(); save($('nt-text').value); });
+    $('nt-clear').addEventListener('click', function () { if (window.confirm('સૂચના કાઢી નાખવી છે?')) save(''); });
+    count();
+  }
 </script>
 
   <script>
   // પરખ – આણંદ : client સ્ક્રીનો (લોગીન, પાસવર્ડ બદલો, હોમ)
   var TOKEN_KEY = 'parakh_token';
-  var state = { session: null, std: null, token: null };
+  var state = { session: null, std: null, token: null, notice: '' };
 
   function $(id) { return document.getElementById(id); }
 
@@ -3484,7 +3790,7 @@
   // ફક્ત વાંચવાનાં કામ: નેટ તૂટે કે સર્વર વ્યસ્ત હોય (ઘણાં બાળકો એક સાથે) તો 2 વાર આપમેળે ફરી.
   // રાહ થોડી અલગ-અલગ (random): બધા ફોન એક જ સેકન્ડે ફરી ન મોકલે.
   var RETRY_CALLS = { apiStudentLogin: 1, apiGetSession: 1, apiListQuizzes: 1, apiGetQuiz: 1, apiSchoolStudents: 1,
-    apiDashboard: 1, apiOverview: 1, apiSchoolQuizStatus: 1, apiStudentReport: 1, apiAdminSchools: 1 };
+    apiDashboard: 1, apiOverview: 1, apiSchoolQuizStatus: 1, apiStudentReport: 1, apiAdminSchools: 1, apiAdminReadiness: 1, apiAdminSystem: 1, apiAdminNotice: 1, apiAdminCheckLogin: 1 };
 
   function retryDelay(tries) {
     return 2000 * (tries + 1) + Math.floor(Math.random() * 1500);
@@ -3606,6 +3912,7 @@
   function onLoggedIn(result) {
     setToken(result.token);
     state.session = result.session;
+    state.notice = result.notice || '';
     showLoginInfo('');
     navReplace('home');
     renderTopbar();
@@ -3735,6 +4042,7 @@
   function logoutLocal(message) {
     clearToken();
     state.session = null;
+    state.notice = '';
     // એક જ ફોન/કમ્પ્યુટર પર આગલું બાળક કે અધિકારી અગાઉનો ડેટા ન જુએ.
     if (typeof quizState !== 'undefined') quizState = null;
     if (typeof admin !== 'undefined') admin.current = null;
@@ -3781,6 +4089,7 @@
     callServer('apiGetSession', token).then(function (r) {
       if (!r.ok) { logoutLocal(r.message); return; }
       state.session = r.session;
+      state.notice = r.notice || '';
       // #quiz જેવી લિંક પર reload: જૂની સ્થિતિ નહીં, હોમથી શરૂ.
       navReplace('home');
       if (state.session.mustChange) { renderTopbar(); openChange(true); } else renderHome();
