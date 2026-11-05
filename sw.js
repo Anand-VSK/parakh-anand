@@ -1,5 +1,5 @@
-// પરખ – આણંદ : service worker (version 80664520cbd1)
-const CACHE = 'parakh-80664520cbd1';
+// પરખ – આણંદ : service worker (version aa7826ed5b4d)
+const CACHE = 'parakh-aa7826ed5b4d';
 const SHELL = ["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","icon-maskable-512.png"];
 self.addEventListener('install', e => {
   // સાચવવામાં ભૂલ આવે તો પણ worker ચાલુ થાય (પેજ નેટ પરથી ખૂલે જ).

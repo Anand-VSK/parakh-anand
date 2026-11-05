@@ -2,7 +2,7 @@
 <html lang="gu">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: data: blob:; manifest-src 'self'; worker-src 'self'; connect-src https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: data: blob:; manifest-src 'self'; worker-src 'self'; frame-src https://drive.google.com; connect-src https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#4338ca">
@@ -446,6 +446,17 @@
 
   /* --- શાળા વ્યવસ્થા (ADMIN) --- */
   .sa-head-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .doc-search { margin-bottom: 12px; }
+  .doc-row { justify-content: flex-start; }
+  .doc-row .sa-main { flex: 1; }
+  .doc-icon { flex-shrink: 0; display: flex; }
+  .doc-icon .ms { font-size: 2rem; color: #4f46e5; margin: 0; }
+  a.icon-btn { text-decoration: none; }
+  .doc-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .doc-title { flex: 1; min-width: 140px; }
+  .doc-bar a.btn-small { text-decoration: none; }
+  .doc-frame { display: block; width: 100%; height: 78vh; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+  .doc-note { margin-top: 6px; }
   .sa-tabs { margin-bottom: 14px; }
   .sa-btns { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .sa-count { display: flex; flex-direction: column; align-items: center; min-width: 54px; flex-shrink: 0; }
@@ -470,7 +481,7 @@
   .sa-phone { display: inline-flex; align-items: center; font-size: .85rem; color: #334155; }
   .sa-phone .ms { font-size: 1.05em; color: #16a34a; }
   .sa-phone.none { color: #b45309; }
-  @media (max-width: 480px) { .sa-row { flex-wrap: wrap; } .sa-row .sa-main { flex-basis: 100%; } .sa-btns { width: 100%; } .sa-btns .btn-small { flex: 1; justify-content: center; } }
+  @media (max-width: 480px) { .sa-row { flex-wrap: wrap; } .sa-row .sa-main { flex-basis: 100%; } .doc-row .sa-main { flex-basis: 0; } .sa-btns { width: 100%; } .sa-btns .btn-small { flex: 1; justify-content: center; } }
   .sa-login { border-color: #86efac; }
   .sa-login h2 .ms { color: #16a34a; }
   .sa-cred { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 10px 0; }
@@ -558,9 +569,9 @@
 (function () {
   // GitHub Pages bridge: google.script.run → fetch(Apps Script doPost); history → browser history.
   var API_URL = "https://script.google.com/macros/s/AKfycbwnNmEfZ-miT0ie0fFCs7_2RvaFRIHBOj_QlnP6nLUAENgLvtQhuOwCum142ALRMpRT/exec";
-  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport","apiSetupStatus","apiAdminSchools","apiAdminCreateLogin","apiAdminAddSchool","apiAdminResetPassword","apiAdminSaveMobile","apiAdminCheckLogin","apiAdminReadiness","apiAdminUpdateSchool","apiAdminSystem","apiAdminNotice","apiAdminSaveNotice"];
+  var NAMES = ["apiLogin","apiStudentLogin","apiGetSession","apiChangePassword","apiLogout","apiListQuizzes","apiGetQuiz","apiSubmitQuiz","apiImportSet","apiAdminListQuizzes","apiCreateQuiz","apiUpdateQuiz","apiGetQuizForEdit","apiSaveQuestion","apiDeleteQuestion","apiAddQuestions","apiDashboard","apiSchoolQuizStatus","apiExportResults","apiOverview","apiSchoolStudents","apiSaveSchoolStudents","apiChangeRoll","apiReorderRolls","apiUpdateStudents","apiAddStudent","apiStudentReport","apiSetupStatus","apiAdminSchools","apiAdminCreateLogin","apiAdminAddSchool","apiAdminResetPassword","apiAdminSaveMobile","apiAdminCheckLogin","apiAdminReadiness","apiAdminUpdateSchool","apiAdminSystem","apiAdminNotice","apiAdminSaveNotice","apiDocuments","apiAdminUploadDocument","apiAdminDeleteDocument"];
   var TIMEOUT_MS = 45000;
-  var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000,"apiAdminReadiness":90000,"apiAdminSystem":90000};
+  var LONG = {"apiExportResults":120000,"apiSaveSchoolStudents":90000,"apiImportSet":120000,"apiAddQuestions":90000,"apiSaveQuestion":90000,"apiAdminReadiness":90000,"apiAdminSystem":90000,"apiAdminUploadDocument":180000};
   function call(fn, args, success, failure) {
     // સર્વર જવાબ ન આપે તો સ્ક્રીન કાયમ "ચાલુ છે..." પર ન રહે.
     var finished = false;
@@ -1866,6 +1877,7 @@
     if (state.session.role === 'DIET') tabs.push(['quiz', 'quiz', 'ક્વિઝ']);
     if (state.session.role === 'SCHOOL') tabs.push(['roster', 'groups', 'વિદ્યાર્થીઓ']);
     else tabs.push(['setup', 'fact_check', 'શાળા તૈયારી']);
+    tabs.push(['docs', 'folder_open', 'દસ્તાવેજો']);
     $('app-home').innerHTML = (state.notice ? '<div class="school-notice">' + dm('campaign') + '<span>' + escapeHtml(state.notice) + '</span></div>' : '') +
       '<div class="tabs light-tabs home-tabs" style="grid-template-columns:repeat(' + tabs.length + ',1fr)">' +
       tabs.map(function (t, i) {
@@ -1880,6 +1892,7 @@
         if (which === 'quiz') renderDietHome();
         else if (which === 'roster') renderRoster();
         else if (which === 'setup') renderSetup({}, true);
+        else if (which === 'docs') renderDocuments();
         else if (which === 'overview') renderOverview({}, true);
         else renderDashboard({}, true);
       });
@@ -3271,7 +3284,7 @@
   var sa = { tab: 'schools', data: null, q: '', filter: 'all', taluka: '', limit: 50, login: null, adding: false, editing: null, busy: false, seq: 0,
     rd: { data: null, filter: 'nokids', q: '', taluka: '', limit: 50 }, checkId: '' };
   var SA_TABS = [['schools', 'school', 'શાળાઓ'], ['ready', 'fact_check', 'તૈયારી'], ['check', 'manage_search', 'લોગીન તપાસ'],
-    ['system', 'monitor_heart', 'સિસ્ટમ'], ['notice', 'campaign', 'સૂચના']];
+    ['system', 'monitor_heart', 'સિસ્ટમ'], ['notice', 'campaign', 'સૂચના'], ['docs', 'folder_open', 'દસ્તાવેજો']];
   var SA_READY_FILTERS = [['nokids', 'બાળકો ઉમેર્યાં નથી'], ['nofln', 'FLN ✓ નથી'], ['ready', 'તૈયાર'], ['all', 'બધી']];
   var SA_FILTERS = [['all', 'બધી'], ['noid', 'ID બાકી'], ['unchanged', 'પાસવર્ડ બદલ્યો નથી'], ['nomobile', 'મોબાઇલ બાકી']];
 
@@ -3335,6 +3348,7 @@
     if (tab === 'check') { drawLoginCheck(); return; }
     if (tab === 'system') { openSystem(); return; }
     if (tab === 'notice') { openNotice(); return; }
+    if (tab === 'docs') { renderDocuments(); return; }
     if (sa.data) { drawSchoolAdmin(); return; }
     saLoading('શાળાઓની યાદી આવી રહી છે...');
     saCall('apiAdminSchools', [], function (r) { sa.data = r; drawSchoolAdmin(); });
@@ -3773,6 +3787,193 @@
 </script>
 
   <script>
+  // પરખ – આણંદ : "દસ્તાવેજો" ટેબ — પરિપત્ર/માર્ગદર્શિકાની યાદી, એપમાં વાંચો કે ડાઉનલોડ કરો. ADMIN ને અપલોડ અને કાઢવાનું પણ.
+  var docs = { list: null, categories: [], filter: '', q: '', current: null, seq: 0, uploading: false };
+  var DOC_MAX_BYTES = 10 * 1024 * 1024;
+
+  routes.docs = function () { openDocsTab(); };
+  routes.docview = function (data) {
+    var d = docs.list && data ? docs.list.filter(function (x) { return x.id === data.id; })[0] : null;
+    if (d) drawDocViewer(d); else openDocsTab();
+  };
+
+  function docRoot() { return $('sa-body') || $('tab-body') || $('app-home'); }
+  function docIsAdmin() { return !!state.session && state.session.role === 'ADMIN'; }
+
+  function docViewUrl(d) { return 'https://drive.google.com/file/d/' + encodeURIComponent(d.fileId) + '/preview'; }
+  function docDownloadUrl(d) { return 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(d.fileId); }
+
+  function docSize(bytes) {
+    if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+  }
+
+  function docIcon(d) {
+    var ext = String(d.name).split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'picture_as_pdf';
+    if (ext === 'xls' || ext === 'xlsx') return 'table_chart';
+    if (ext === 'ppt' || ext === 'pptx') return 'slideshow';
+    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') return 'image';
+    return 'description';
+  }
+
+  // ટેબ પર ફરી આવવું (Back સહિત): હોમની ટેબ કે એડમિનની ટેબ જે હોય તે.
+  function openDocsTab() {
+    if (docIsAdmin() && $('sa-body')) { openSaTab('docs'); return; }
+    if (!$('tab-body')) renderOfficialHome();
+    markHomeTab('docs');
+    renderDocuments();
+  }
+
+  function renderDocuments() {
+    docs.current = null;
+    stopOverviewTimer();
+    if (docs.list) drawDocuments();
+    else docRoot().innerHTML = '<div class="admin-card text-center"><div class="spinner admin-spin"></div><p class="mt-3">દસ્તાવેજો આવી રહ્યા છે...</p></div>';
+    var seq = ++docs.seq;
+    callServer('apiDocuments', getToken()).then(function (r) {
+      if (seq !== docs.seq || docs.current || !docRoot()) return;
+      if (handleExpired(r)) return;
+      if (!r.ok) { docRoot().innerHTML = '<div class="error-card">' + escapeHtml(r.message) + '</div>'; return; }
+      docs.list = r.documents;
+      docs.categories = r.categories;
+      drawDocuments();
+    });
+  }
+
+  function drawDocuments() {
+    var root = docRoot();
+    root.innerHTML = '<div class="admin-head"><h2 class="admin-title">' + dm('folder_open') + 'દસ્તાવેજો</h2></div>' +
+      (docIsAdmin() ? docUploadForm() : '') +
+      '<div class="chips" id="doc-chips"></div>' +
+      '<input id="doc-q" class="field doc-search" placeholder="દસ્તાવેજ શોધો" autocomplete="off" value="' + escapeHtml(docs.q) + '">' +
+      '<div id="doc-list"></div>';
+    $('doc-q').addEventListener('input', function () { docs.q = this.value; drawDocList(); });
+    if (docIsAdmin()) bindDocUpload();
+    drawDocList();
+  }
+
+  function drawDocList() {
+    var q = docs.q.trim().toLowerCase();
+    var found = docs.list.filter(function (d) { return !q || (d.title + ' ' + d.name).toLowerCase().indexOf(q) !== -1; });
+    $('doc-chips').innerHTML = [''].concat(docs.categories).map(function (c) {
+      var n = found.filter(function (d) { return !c || d.category === c; }).length;
+      return '<button type="button" class="chip' + (docs.filter === c ? ' on' : '') + '" data-doc-cat="' + escapeHtml(c) + '">' + escapeHtml(c || 'બધા') + ' (' + n + ')</button>';
+    }).join('');
+    $('doc-chips').querySelectorAll('[data-doc-cat]').forEach(function (b) {
+      b.addEventListener('click', function () { docs.filter = b.getAttribute('data-doc-cat'); drawDocList(); });
+    });
+    var rows = found.filter(function (d) { return !docs.filter || d.category === docs.filter; });
+    $('doc-list').innerHTML = rows.length ? rows.map(function (d) {
+      return '<div class="sa-row doc-row"><span class="doc-icon">' + dm(docIcon(d)) + '</span><div class="sa-main"><p class="sa-name">' + escapeHtml(d.title) + '</p>' +
+        '<p class="muted">' + escapeHtml(d.category) + ' · ' + escapeHtml(d.date) + ' · ' + docSize(d.size) + '</p></div>' +
+        '<div class="sa-btns">' + (docIsAdmin() ? '<button type="button" class="icon-btn danger" data-doc-del="' + escapeHtml(d.id) + '" aria-label="દસ્તાવેજ કાઢો" title="દસ્તાવેજ કાઢો">' + dm('delete') + '</button>' : '') +
+        '<a class="icon-btn" href="' + escapeHtml(docDownloadUrl(d)) + '" target="_blank" rel="noopener noreferrer" aria-label="ડાઉનલોડ" title="ડાઉનલોડ">' + dm('download') + '</a>' +
+        '<button type="button" class="btn-small" data-doc-open="' + escapeHtml(d.id) + '">' + dm('visibility') + 'વાંચો</button></div></div>';
+    }).join('') : '<div class="admin-card text-center muted">' + (docs.list.length ? 'આ શોધમાં કોઈ દસ્તાવેજ નથી.' : 'હજુ કોઈ દસ્તાવેજ મુકાયો નથી.') + '</div>';
+    $('doc-list').querySelectorAll('[data-doc-open]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = b.getAttribute('data-doc-open');
+        // Back બટન: વાંચવાની સ્ક્રીનથી યાદી પર (હોમ પર નહીં).
+        navReplace('docs');
+        navPush('docview', { id: id });
+        drawDocViewer(docs.list.filter(function (d) { return d.id === id; })[0]);
+      });
+    });
+    $('doc-list').querySelectorAll('[data-doc-del]').forEach(function (b) {
+      b.addEventListener('click', function () { deleteDocument(b.getAttribute('data-doc-del')); });
+    });
+  }
+
+  function drawDocViewer(d) {
+    docs.current = d;
+    docRoot().innerHTML = '<div class="doc-bar"><button type="button" class="btn-ghost" id="doc-back">' + dm('arrow_back') + 'યાદી</button>' +
+      '<p class="sa-name doc-title">' + escapeHtml(d.title) + '</p>' +
+      '<a class="btn-small" href="' + escapeHtml(docDownloadUrl(d)) + '" target="_blank" rel="noopener noreferrer">' + dm('download') + 'ડાઉનલોડ</a></div>' +
+      '<iframe class="doc-frame" title="' + escapeHtml(d.title) + '" src="' + escapeHtml(docViewUrl(d)) + '" allow="autoplay"></iframe>' +
+      '<p class="muted doc-note">દસ્તાવેજ ન દેખાય તો ડાઉનલોડ કરીને ખોલો.</p>';
+    $('doc-back').addEventListener('click', function () { navReplace('docs'); openDocsTab(); });
+    window.scrollTo(0, 0);
+  }
+
+  // --- ADMIN: અપલોડ અને કાઢવું ---
+
+  function docUploadForm() {
+    return '<form class="admin-card" id="doc-form" novalidate><h2>' + dm('upload_file') + 'નવો દસ્તાવેજ અપલોડ કરો</h2>' +
+      '<p class="muted">ફાઇલ તમારી Google Drive ના "પરખ દસ્તાવેજો" ફોલ્ડરમાં સચવાશે અને બધા અધિકારી તથા શાળા લોગીનમાં દેખાશે; બાળકોને નહીં. લિંક મળે તે ફાઇલ જોઈ શકે છે, એટલે ખાનગી વિગતોવાળી ફાઇલ મૂકશો નહીં.</p>' +
+      '<div class="form-grid"><label class="span2">શીર્ષક<input id="doc-title" class="field" maxlength="150" autocomplete="off"></label>' +
+      '<label>પ્રકાર<select id="doc-cat" class="field"><option value="">પસંદ કરો</option>' +
+      docs.categories.map(function (c) { return '<option>' + escapeHtml(c) + '</option>'; }).join('') + '</select></label></div>' +
+      '<label class="file-drop">' + dm('attach_file') + '<span id="doc-file-name">ફાઇલ પસંદ કરો (PDF, Word, Excel, PowerPoint, JPG, PNG · 10 MB સુધી)</span>' +
+      '<input type="file" id="doc-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"></label>' +
+      '<div class="error-card hidden" data-error></div><div class="info-light hidden" id="doc-done"></div>' +
+      '<div class="row-actions"><button type="submit" class="btn-small" id="doc-send">' + dm('cloud_upload') + 'અપલોડ કરો</button></div></form>';
+  }
+
+  function bindDocUpload() {
+    $('doc-file').addEventListener('change', function () {
+      var f = this.files[0];
+      $('doc-file-name').textContent = f ? f.name + ' · ' + docSize(f.size) : 'ફાઇલ પસંદ કરો';
+      if (f && !$('doc-title').value.trim()) $('doc-title').value = f.name.replace(/\.[^.]+$/, '');
+    });
+    $('doc-form').addEventListener('submit', function (e) { e.preventDefault(); uploadDocument(); });
+  }
+
+  function uploadDocument() {
+    var form = $('doc-form');
+    var file = $('doc-file').files[0];
+    var btn = $('doc-send');
+    setError(form, '');
+    $('doc-done').classList.add('hidden');
+    if (docs.uploading) return;
+    // ફાઇલ મોકલતાં પહેલાં જ: ધીમા નેટમાં આખી ફાઇલ મોકલ્યા પછી ભૂલ ન આવે.
+    if (!$('doc-title').value.trim()) { setError(form, 'દસ્તાવેજનું શીર્ષક લખો.'); return; }
+    if (!$('doc-cat').value) { setError(form, 'દસ્તાવેજનો પ્રકાર પસંદ કરો.'); return; }
+    if (!file) { setError(form, 'ફાઇલ પસંદ કરો.'); return; }
+    if (file.size > DOC_MAX_BYTES) { setError(form, 'ફાઇલ 10 MB થી નાની હોવી જોઈએ.'); return; }
+    docs.uploading = true;
+    btn.disabled = true;
+    btn.innerHTML = dm('progress_activity', 'spin') + 'અપલોડ ચાલુ છે...';
+    function finish() {
+      docs.uploading = false;
+      if (!$('doc-send')) return;
+      btn.disabled = false;
+      btn.innerHTML = dm('cloud_upload') + 'અપલોડ કરો';
+    }
+    var reader = new FileReader();
+    reader.onerror = function () { finish(); setError(form, 'ફાઇલ વાંચી શકાઈ નહીં.'); };
+    reader.onload = function () {
+      var input = { title: $('doc-title').value, category: $('doc-cat').value, name: file.name, mime: file.type,
+        base64: String(reader.result).split(',')[1] || '' };
+      callServer('apiAdminUploadDocument', getToken(), input).then(function (r) {
+        finish();
+        if (handleExpired(r)) return;
+        if (!$('doc-form')) return;
+        if (!r.ok) { setError(form, r.message); return; }
+        docs.list.unshift(r.document);
+        form.reset();
+        $('doc-file-name').textContent = 'ફાઇલ પસંદ કરો';
+        $('doc-done').textContent = '"' + r.document.title + '" અપલોડ થયો. હવે બધા લોગીનમાં દેખાશે.';
+        $('doc-done').classList.remove('hidden');
+        drawDocList();
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function deleteDocument(id) {
+    var d = docs.list.filter(function (x) { return x.id === id; })[0];
+    if (!d || !window.confirm(d.title + '\n\nઆ દસ્તાવેજ બધા લોગીનમાંથી નીકળી જશે અને ફાઇલ Drive ના Trash માં જશે. કાઢવો છે?')) return;
+    callServer('apiAdminDeleteDocument', getToken(), id).then(function (r) {
+      if (handleExpired(r)) return;
+      if (!r.ok) { alert(r.message); return; }
+      docs.list = docs.list.filter(function (x) { return x.id !== id; });
+      if ($('doc-list')) drawDocList();
+    });
+  }
+</script>
+
+  <script>
   // પરખ – આણંદ : client સ્ક્રીનો (લોગીન, પાસવર્ડ બદલો, હોમ)
   var TOKEN_KEY = 'parakh_token';
   var state = { session: null, std: null, token: null, notice: '' };
@@ -3790,7 +3991,7 @@
   // ફક્ત વાંચવાનાં કામ: નેટ તૂટે કે સર્વર વ્યસ્ત હોય (ઘણાં બાળકો એક સાથે) તો 2 વાર આપમેળે ફરી.
   // રાહ થોડી અલગ-અલગ (random): બધા ફોન એક જ સેકન્ડે ફરી ન મોકલે.
   var RETRY_CALLS = { apiStudentLogin: 1, apiGetSession: 1, apiListQuizzes: 1, apiGetQuiz: 1, apiSchoolStudents: 1,
-    apiDashboard: 1, apiOverview: 1, apiSchoolQuizStatus: 1, apiStudentReport: 1, apiAdminSchools: 1, apiAdminReadiness: 1, apiAdminSystem: 1, apiAdminNotice: 1, apiAdminCheckLogin: 1 };
+    apiDashboard: 1, apiOverview: 1, apiSchoolQuizStatus: 1, apiStudentReport: 1, apiAdminSchools: 1, apiAdminReadiness: 1, apiAdminSystem: 1, apiAdminNotice: 1, apiAdminCheckLogin: 1, apiDocuments: 1 };
 
   function retryDelay(tries) {
     return 2000 * (tries + 1) + Math.floor(Math.random() * 1500);
@@ -4048,6 +4249,7 @@
     if (typeof admin !== 'undefined') admin.current = null;
     if (typeof dash !== 'undefined') { dash.data = null; dash.status = null; }
     if (typeof sa !== 'undefined') { sa.data = null; sa.login = null; }
+    if (typeof docs !== 'undefined') { docs.list = null; docs.current = null; }
     showLoginInfo(message || '');
     showScreen('login');
   }
